@@ -1,0 +1,10 @@
+# Подсказка Railway: собирать наш Python-бот, а не статику index.html.
+# Mini App живёт отдельно на GitHub Pages, тут крутится только бот.
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "bot/Dockerfile"
+
+[deploy]
+restartPolicyType = "ALWAYS"
+restartPolicyMaxRetries = 10

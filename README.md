@@ -88,9 +88,11 @@ WebApp по кнопке.
 
 ### Запуск в Docker
 
+Из корня репозитория (контекст сборки — корень, путь к Dockerfile —
+`bot/Dockerfile`):
+
 ```bash
-cd bot
-docker build -t lunaria-bot .
+docker build -f bot/Dockerfile -t lunaria-bot .
 docker run -d --name lunaria-bot --restart=always \
   -e BOT_TOKEN=123456:ABC... \
   -e WEBAPP_URL=https://your-domain.example/ \
@@ -100,6 +102,33 @@ docker run -d --name lunaria-bot --restart=always \
 
 База `users.db` хранится в volume `/data`, чтобы выбранный язык
 переживал рестарты контейнера.
+
+### Деплой на Railway
+
+В корне репо лежит `railway.toml` — он говорит Railway собирать
+**Python-бот по `bot/Dockerfile`**, а не статику из корня (иначе
+платформа сама сделает Caddy-контейнер с `index.html` и бот не
+запустится — это самая частая причина «бот молчит на /start»).
+
+Шаги:
+
+1. New Project → Deploy from GitHub repo → выбрать этот репозиторий.
+2. В **Variables** добавить:
+   - `BOT_TOKEN` — токен от @BotFather
+   - `WEBAPP_URL` — HTTPS-URL Mini App (например, ваш GitHub Pages
+     вида `https://<username>.github.io/<repo>/`)
+   - `DB_PATH` — `/data/users.db` (уже задан в Dockerfile, но можно
+     переопределить)
+3. В разделе **Volumes** примонтировать том на `/data` — иначе после
+     каждого редеплоя SQLite-файл с языками будет пересоздаваться
+     с нуля.
+4. Deploy. В логах должно появиться что-то вроде
+   `aiogram.dispatcher … Run polling for bot @<your_bot>` — это
+   значит бот в long polling и `/start` уже отвечает.
+
+Если в логах вместо этого Caddy и `automatic HTTPS is completely
+disabled` — значит `railway.toml` не подцепился: проверьте, что файл
+лежит именно в корне ветки, которая задеплоена, и пересоберите сервис.
 
 ## 🛠 Технологии
 
