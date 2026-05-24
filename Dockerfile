@@ -6,9 +6,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Пути даны от корня репозитория, чтобы образ собирался и при
-# `docker build -f bot/Dockerfile .` из корня, и на Railway (там
-# контекст сборки — всегда корень репо).
+# Dockerfile лежит в корне намеренно: иначе Railway видит index.html и
+# автоматически собирает статический Caddy-образ вместо Python-бота.
 COPY bot/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
