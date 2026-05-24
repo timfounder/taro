@@ -26,8 +26,11 @@ lunaria-tarot/
 ├── bot/               — Telegram-бот: точка входа в Mini App
 │   ├── bot.py            (aiogram v3, long polling, SQLite)
 │   ├── requirements.txt
-│   ├── Dockerfile
 │   └── .env.example
+├── Dockerfile         — образ бота (в корне, чтобы Railway
+│                        не собирал статику)
+├── railway.toml       — конфиг Railway: builder = Dockerfile
+├── .dockerignore
 ├── README.md
 ├── LICENSE
 └── .gitignore
@@ -88,11 +91,11 @@ WebApp по кнопке.
 
 ### Запуск в Docker
 
-Из корня репозитория (контекст сборки — корень, путь к Dockerfile —
-`bot/Dockerfile`):
+`Dockerfile` лежит в корне репозитория (намеренно — иначе Railway
+автоматически собирает статический Caddy-образ из `index.html`):
 
 ```bash
-docker build -f bot/Dockerfile -t lunaria-bot .
+docker build -t lunaria-bot .
 docker run -d --name lunaria-bot --restart=always \
   -e BOT_TOKEN=123456:ABC... \
   -e WEBAPP_URL=https://your-domain.example/ \
@@ -105,10 +108,10 @@ docker run -d --name lunaria-bot --restart=always \
 
 ### Деплой на Railway
 
-В корне репо лежит `railway.toml` — он говорит Railway собирать
-**Python-бот по `bot/Dockerfile`**, а не статику из корня (иначе
-платформа сама сделает Caddy-контейнер с `index.html` и бот не
-запустится — это самая частая причина «бот молчит на /start»).
+В корне репо лежит `Dockerfile` (для Python-бота) и `railway.toml` —
+вместе они заставляют Railway собирать именно бота, а не статический
+Caddy-контейнер из `index.html` (иначе бот вообще не запускается — это
+самая частая причина «бот молчит на /start»).
 
 Шаги:
 
