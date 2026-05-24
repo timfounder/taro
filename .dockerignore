@@ -1,0 +1,11 @@
+.git
+.gitignore
+gitignore
+README.md
+LICENSE
+index.html
+bot/.env
+bot/.env.local
+bot/users.db
+bot/__pycache__
+bot/.venv

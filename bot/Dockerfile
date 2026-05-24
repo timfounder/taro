@@ -6,10 +6,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-COPY requirements.txt .
+# Пути даны от корня репозитория, чтобы образ собирался и при
+# `docker build -f bot/Dockerfile .` из корня, и на Railway (там
+# контекст сборки — всегда корень репо).
+COPY bot/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY bot.py .
+COPY bot/bot.py .
 
 RUN mkdir -p /data
 VOLUME ["/data"]
