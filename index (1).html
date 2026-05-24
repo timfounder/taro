@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Картa Дня · Lunaria</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#080510;--deep:#120b1f;--plum:#22142f;
+    --gold:#d9a94e;--gold-soft:#eccf94;--mist:#b7a4d6;--ink:#f4eeff;
+    --line:rgba(217,169,78,.22);--glow:rgba(217,169,78,.45);
+    --safe-top:0px;--safe-bottom:0px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-user-select:none;user-select:none;
+    -webkit-touch-callout:none;}
+  html,body{height:100%;overscroll-behavior:none;}
+  body{
+    background:
+      radial-gradient(ellipse 75% 55% at 50% -5%, rgba(96,55,135,.5), transparent 70%),
+      radial-gradient(ellipse 60% 45% at 85% 105%, rgba(60,34,88,.55), transparent 70%),
+      var(--void);
+    color:var(--ink);font-family:'Jost',sans-serif;font-weight:300;
+    min-height:100%;overflow-x:hidden;-webkit-tap-highlight-color:transparent;
+  }
+  input{-webkit-user-select:text;user-select:text;}
+  .stars,.fog,.embers{position:fixed;inset:0;pointer-events:none;}
+  .stars{z-index:0;}
+  .star{position:absolute;background:#fff;border-radius:50%;animation:tw 5s ease-in-out infinite;}
+  @keyframes tw{0%,100%{opacity:.1;}50%{opacity:.85;}}
+  .fog{z-index:1;background:
+      radial-gradient(circle at 20% 30%,rgba(120,80,160,.18),transparent 45%),
+      radial-gradient(circle at 80% 60%,rgba(80,50,120,.18),transparent 45%);
+    animation:drift 26s ease-in-out infinite alternate;}
+  @keyframes drift{from{transform:translate3d(-3%,-2%,0) scale(1.1);}to{transform:translate3d(3%,2%,0) scale(1.25);}}
+  .embers{z-index:2;}
+  .ember{position:absolute;width:3px;height:3px;border-radius:50%;
+    background:var(--gold-soft);box-shadow:0 0 8px var(--glow);bottom:-10px;
+    animation:rise-e linear infinite;opacity:0;}
+  @keyframes rise-e{0%{transform:translateY(0) translateX(0);opacity:0;}
+    12%{opacity:.9;}88%{opacity:.7;}100%{transform:translateY(-104vh) translateX(30px);opacity:0;}}
+
+  .app{position:relative;z-index:3;max-width:480px;margin:0 auto;
+    padding:calc(18px + var(--safe-top)) 22px calc(116px + var(--safe-bottom));}
+
+  .topbar{display:flex;align-items:center;justify-content:space-between;}
+  .brand{font-family:'Cormorant Garamond',serif;font-size:13px;letter-spacing:.4em;
+    text-transform:uppercase;color:var(--gold);font-weight:600;}
+  .moon{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--gold);
+    margin:0 8px;vertical-align:middle;box-shadow:0 0 8px var(--gold);}
+  .controls{display:flex;gap:7px;}
+  .ctl{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);
+    background:rgba(34,20,47,.7);color:var(--gold);cursor:pointer;font-size:14px;
+    display:flex;align-items:center;justify-content:center;transition:.25s;
+    font-family:'Jost',sans-serif;backdrop-filter:blur(6px);}
+  .ctl:active{transform:scale(.92);}
+  .ctl.lang{width:auto;padding:0 13px;border-radius:100px;font-size:11px;letter-spacing:.12em;font-weight:500;}
+
+  .streak{margin:16px auto 0;display:flex;align-items:center;justify-content:center;gap:13px;
+    background:rgba(34,20,47,.6);border:1px solid var(--line);border-radius:100px;
+    padding:9px 20px;width:fit-content;backdrop-filter:blur(8px);}
+  .streak b{font-family:'Cormorant Garamond',serif;font-size:21px;color:var(--gold-soft);font-weight:700;}
+  .streak span{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--mist);}
+  .streak .sep{width:1px;height:20px;background:var(--line);}
+
+  .stage{margin-top:28px;perspective:1500px;display:flex;flex-direction:column;align-items:center;}
+  /* halo is locked to the card size so nothing can shift it off-centre */
+  .halo{position:relative;width:222px;height:360px;}
+  .halo::before{content:"";position:absolute;inset:-44px;border-radius:50%;
+    background:radial-gradient(circle,var(--glow),transparent 68%);opacity:0;transition:opacity 1.3s ease;}
+  .halo.lit::before{opacity:.55;animation:breathe 4.5s ease-in-out infinite;}
+  @keyframes breathe{0%,100%{opacity:.32;}50%{opacity:.62;}}
+
+  .card{position:absolute;inset:0;transform-style:preserve-3d;
+    transition:transform 1.15s cubic-bezier(.6,.04,.2,1);cursor:pointer;}
+  .card.flipped{transform:rotateY(180deg);}
+  .card.hidden{opacity:0;pointer-events:none;}
+
+  /* ---- shuffle deck: stack of dummy cards driven entirely by JS transforms ---- */
+  .deck{position:absolute;inset:0;pointer-events:none;}
+  .deck.gone{display:none;}
+  .dcard{position:absolute;inset:0;border-radius:18px;border:1px solid var(--line);
+    background:
+      repeating-linear-gradient(45deg,rgba(217,169,78,.07) 0 10px,transparent 10px 20px),
+      linear-gradient(160deg,var(--plum),var(--deep));
+    box-shadow:0 18px 40px -16px rgba(0,0,0,.8),inset 0 0 50px rgba(0,0,0,.5);
+    display:flex;align-items:center;justify-content:center;
+    will-change:transform;
+    /* a single transition handles every phase — no keyframes, no conflicts */
+    transition:transform .6s cubic-bezier(.45,.05,.25,1),
+               box-shadow .6s ease, opacity .4s ease;}
+  .dcard.chosen{box-shadow:0 30px 60px -14px rgba(217,169,78,.5),inset 0 0 50px rgba(0,0,0,.5);}
+  .dcard .dmark{width:64px;height:64px;border:1px solid rgba(217,169,78,.55);
+    border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:20px;color:var(--gold);transition:box-shadow .5s ease,border-color .5s ease;}
+  .dcard.chosen .dmark{box-shadow:0 0 22px var(--glow);border-color:var(--gold);}
+  .face{position:absolute;inset:0;backface-visibility:hidden;border-radius:18px;
+    overflow:hidden;border:1px solid var(--line);}
+  .back{background:
+      repeating-linear-gradient(45deg,rgba(217,169,78,.07) 0 10px,transparent 10px 20px),
+      linear-gradient(160deg,var(--plum),var(--deep));
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 26px 56px -18px rgba(0,0,0,.85),inset 0 0 60px rgba(0,0,0,.55);}
+  .sigil{width:116px;height:116px;border:1px solid var(--gold);border-radius:50%;
+    display:flex;align-items:center;justify-content:center;position:relative;}
+  .sigil::before{content:"";position:absolute;inset:12px;border:1px solid rgba(217,169,78,.4);border-radius:50%;}
+  .sigil::after{content:"";position:absolute;inset:-14px;border:1px dashed rgba(217,169,78,.28);
+    border-radius:50%;animation:spin 30s linear infinite;}
+  .sigil span{font-size:38px;animation:spin 24s linear infinite reverse;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .front{transform:rotateY(180deg);background:linear-gradient(165deg,#301d4a,#150c25);
+    display:flex;padding:18px;box-shadow:0 26px 56px -18px rgba(0,0,0,.85);}
+  .front .frame{flex:1;border:1px solid var(--line);border-radius:11px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:16px;gap:12px;text-align:center;
+    background:radial-gradient(ellipse at 50% 25%,rgba(217,169,78,.1),transparent 70%);}
+  .front .num{font-family:'Cormorant Garamond',serif;font-size:13px;letter-spacing:.32em;color:var(--gold);}
+  .front .glyph{font-size:66px;filter:drop-shadow(0 0 18px var(--glow));
+    animation:floaty 5s ease-in-out infinite;transition:transform .6s ease;}
+  .front .glyph.rev{transform:rotate(180deg);}
+  @keyframes floaty{0%,100%{transform:translateY(0);}50%{transform:translateY(-7px);}}
+  .front .cname{font-family:'Cormorant Garamond',serif;font-size:27px;font-weight:700;line-height:1.1;}
+  .front .upr{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--mist);}
+  .front .pos{font-size:9px;letter-spacing:.16em;text-transform:uppercase;
+    padding:3px 10px;border-radius:100px;border:1px solid var(--line);color:var(--gold-soft);}
+
+  .tap-hint{margin-top:22px;font-size:11px;letter-spacing:.24em;text-transform:uppercase;
+    color:var(--mist);animation:pulse 2.4s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:.3;}50%{opacity:1;}}
+
+  .panel{margin-top:26px;background:rgba(18,11,31,.74);border:1px solid var(--line);
+    border-radius:20px;padding:24px;backdrop-filter:blur(10px);}
+  .panel h2{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:23px;
+    text-align:center;line-height:1.25;}
+  .panel .sub{text-align:center;font-size:12px;color:var(--mist);margin:5px 0 18px;letter-spacing:.03em;}
+  .moods{display:flex;justify-content:center;gap:9px;flex-wrap:wrap;}
+  .mood{width:60px;min-height:66px;border-radius:15px;border:1px solid var(--line);
+    background:rgba(34,20,47,.6);cursor:pointer;transition:.2s;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:7px 3px;}
+  .mood .me{font-size:24px;line-height:1;}
+  .mood .ml{font-size:9.5px;letter-spacing:.03em;color:var(--mist);text-transform:lowercase;
+    text-align:center;transition:.2s;}
+  .mood:active{transform:scale(.94);}
+  .mood.sel{border-color:var(--gold);background:rgba(217,169,78,.16);box-shadow:0 0 18px var(--glow);}
+  .mood.sel .ml{color:var(--gold-soft);}
+
+  .btn{display:block;width:100%;margin-top:20px;padding:15px;
+    background:linear-gradient(120deg,var(--gold),var(--gold-soft));color:#1a0f2b;
+    border:none;border-radius:100px;cursor:pointer;font-family:'Jost',sans-serif;
+    font-weight:500;font-size:12px;letter-spacing:.2em;text-transform:uppercase;transition:.2s;}
+  .btn:active{transform:scale(.97);}
+  .btn:disabled{opacity:.32;cursor:not-allowed;}
+  .btn.ghost{background:transparent;color:var(--gold);border:1px solid var(--line);}
+
+  .reading{margin-top:22px;animation:rise .8s ease both;}
+  @keyframes rise{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:none;}}
+  .reading .focus-tag{display:block;width:fit-content;margin:0 auto 14px;font-size:10px;
+    letter-spacing:.2em;text-transform:uppercase;color:var(--mist);
+    border:1px solid var(--line);border-radius:100px;padding:5px 15px;}
+  .reading .kw{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:18px;
+    color:var(--gold-soft);text-align:center;margin-bottom:18px;}
+  .seg{display:flex;gap:12px;padding:14px 4px;border-top:1px solid var(--line);}
+  .seg:first-of-type{border-top:none;}
+  .seg .si{font-size:20px;flex-shrink:0;width:26px;text-align:center;}
+  .seg .sc h4{font-family:'Jost',sans-serif;font-weight:500;font-size:10px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--gold);margin-bottom:4px;}
+  .seg .sc p{font-size:14px;line-height:1.65;color:#ddd0f0;}
+  .seg .sc .aff{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:16px;color:var(--gold-soft);}
+
+  .echo{margin-top:18px;border:1px dashed var(--line);border-radius:18px;padding:20px;text-align:center;}
+  .echo .ico{font-size:24px;}
+  .echo h3{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:19px;margin:6px 0 4px;}
+  .echo p{font-size:12px;color:var(--mist);margin-bottom:15px;line-height:1.5;}
+  .echo-opts{display:flex;gap:8px;}
+  .echo-opts button{flex:1;padding:12px 6px;border-radius:13px;border:1px solid var(--line);
+    background:rgba(34,20,47,.6);color:var(--ink);font-family:'Jost',sans-serif;font-size:11px;
+    cursor:pointer;transition:.2s;}
+  .echo-opts button:active{transform:scale(.95);}
+  .echo-locked .echo-opts{display:none;}
+  .echo-lockmsg{font-size:12px;color:var(--gold-soft);font-style:italic;
+    font-family:'Cormorant Garamond',serif;}
+  .echo-done{font-size:14px;color:var(--gold-soft);font-style:italic;
+    font-family:'Cormorant Garamond',serif;line-height:1.5;}
+
+  nav{position:fixed;bottom:0;left:0;right:0;z-index:6;
+    background:linear-gradient(transparent,var(--void) 34%);
+    padding:22px 0 calc(20px + var(--safe-bottom));}
+  .nav-inner{max-width:480px;margin:0 auto;display:flex;justify-content:space-around;
+    background:rgba(18,11,31,.93);border:1px solid var(--line);border-radius:100px;
+    padding:8px;width:calc(100% - 44px);backdrop-filter:blur(12px);}
+  .nav-inner button{flex:1;background:none;border:none;color:var(--mist);cursor:pointer;
+    padding:10px 4px;border-radius:100px;font-family:'Jost',sans-serif;font-size:9px;
+    letter-spacing:.07em;text-transform:uppercase;transition:.2s;
+    display:flex;flex-direction:column;align-items:center;gap:4px;}
+  .nav-inner button:active{transform:scale(.93);}
+  .nav-inner button .ni{font-size:16px;}
+  .nav-inner button.active{color:var(--gold);background:rgba(217,169,78,.13);}
+
+  .view{display:none;}
+  .view.on{display:block;animation:rise .5s ease both;}
+
+  .grid-head{text-align:center;}
+  .grid-head h2{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:27px;}
+  .grid-head .prog{font-size:12px;color:var(--mist);letter-spacing:.05em;margin-top:2px;}
+  .bar{height:5px;background:rgba(217,169,78,.14);border-radius:100px;margin:14px 0 22px;overflow:hidden;}
+  .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-soft));
+    border-radius:100px;transition:width .9s ease;box-shadow:0 0 10px var(--glow);}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;}
+  .slot{aspect-ratio:.66;border-radius:10px;border:1px solid var(--line);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:22px;}
+  .slot.locked{background:rgba(34,20,47,.4);color:rgba(183,164,214,.22);}
+  .slot.got{background:linear-gradient(160deg,#301d4a,#150c25);box-shadow:inset 0 0 20px rgba(217,169,78,.14);}
+  .slot small{font-size:7px;letter-spacing:.05em;text-transform:uppercase;color:var(--mist);text-align:center;padding:0 2px;}
+
+  .jrow{display:flex;align-items:center;gap:14px;background:rgba(18,11,31,.66);
+    border:1px solid var(--line);border-radius:15px;padding:13px 15px;margin-bottom:10px;}
+  .jrow .jg{font-size:28px;}
+  .jrow .jm{flex:1;}
+  .jrow .jm b{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;display:block;}
+  .jrow .jm span{font-size:11px;color:var(--mist);letter-spacing:.03em;}
+  .jrow .jhit{font-size:18px;}
+  .empty{text-align:center;color:var(--mist);font-size:14px;padding:46px 20px;
+    font-style:italic;font-family:'Cormorant Garamond',serif;}
+
+  .week{background:radial-gradient(ellipse at 50% 0%,rgba(96,55,135,.4),transparent 70%),
+      rgba(18,11,31,.8);border:1px solid var(--gold);border-radius:18px;
+    padding:20px;margin-bottom:18px;}
+  .week h3{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:19px;
+    text-align:center;margin-bottom:4px;}
+  .week .wsub{text-align:center;font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--mist);margin-bottom:14px;}
+  .week .wrow{display:flex;justify-content:space-around;text-align:center;}
+  .week .wrow div b{display:block;font-family:'Cormorant Garamond',serif;font-size:24px;
+    color:var(--gold-soft);font-weight:700;}
+  .week .wrow div span{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--mist);}
+
+  .ach-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+  .ach{display:flex;gap:11px;align-items:center;border:1px solid var(--line);
+    border-radius:14px;padding:12px;background:rgba(18,11,31,.6);}
+  .ach.locked{opacity:.4;}
+  .ach.unlocked{box-shadow:inset 0 0 16px rgba(217,169,78,.13);border-color:rgba(217,169,78,.4);}
+  .ach .ai{font-size:24px;}
+  .ach .at b{font-family:'Cormorant Garamond',serif;font-size:14px;font-weight:600;display:block;line-height:1.15;}
+  .ach .at span{font-size:9.5px;color:var(--mist);line-height:1.3;}
+
+  .overlay{position:fixed;inset:0;z-index:20;background:rgba(4,2,9,.88);
+    display:none;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(7px);}
+  .overlay.on{display:flex;}
+  .sharecard{width:312px;border-radius:22px;padding:32px 28px;text-align:center;
+    background:radial-gradient(ellipse at 50% 0%,rgba(96,55,135,.6),transparent 70%),
+      linear-gradient(165deg,#301d4a,#0c0717);
+    border:1px solid var(--gold);box-shadow:0 0 56px var(--glow);}
+  .sharecard .sbrand{font-family:'Cormorant Garamond',serif;font-size:11px;letter-spacing:.38em;
+    text-transform:uppercase;color:var(--gold);}
+  .sharecard .sglyph{font-size:74px;margin:16px 0 4px;filter:drop-shadow(0 0 18px var(--glow));}
+  .sharecard .sglyph.rev{transform:rotate(180deg);}
+  .sharecard .sname{font-family:'Cormorant Garamond',serif;font-size:31px;font-weight:700;}
+  .sharecard .spos{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-soft);margin-top:4px;}
+  .sharecard .skw{font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--gold-soft);
+    font-size:15px;margin:8px 0 16px;}
+  .sharecard .sdate{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--mist);
+    border-top:1px solid var(--line);padding-top:14px;}
+
+  .namebox{width:320px;background:linear-gradient(165deg,#251636,#0e0819);
+    border:1px solid var(--gold);border-radius:22px;padding:30px 26px;text-align:center;
+    box-shadow:0 0 50px var(--glow);}
+  .namebox .ng{font-size:42px;margin-bottom:8px;}
+  .namebox h2{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:23px;margin-bottom:6px;}
+  .namebox p{font-size:12px;color:var(--mist);margin-bottom:18px;line-height:1.5;}
+  .namebox input{width:100%;padding:13px 16px;border-radius:12px;
+    border:1px solid var(--line);background:rgba(34,20,47,.7);color:var(--ink);
+    font-family:'Jost',sans-serif;font-size:14px;text-align:center;outline:none;}
+  .namebox input:focus{border-color:var(--gold);}
+
+  .toast{position:fixed;bottom:calc(122px + var(--safe-bottom));left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--plum);border:1px solid var(--gold);color:var(--gold-soft);
+    padding:11px 22px;border-radius:100px;font-size:12px;letter-spacing:.05em;
+    opacity:0;transition:.35s;z-index:30;pointer-events:none;max-width:88%;text-align:center;}
+  .toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+<div class="stars" id="stars"></div>
+<div class="fog"></div>
+<div class="embers" id="embers"></div>
+
+<div class="app">
+  <div class="topbar">
+    <div class="brand">Lunaria<span class="moon"></span><span data-t="kicker"></span></div>
+    <div class="controls">
+      <button class="ctl lang" id="langBtn" onclick="toggleLang()">UA</button>
+      <button class="ctl" id="soundBtn" onclick="toggleSound()">♪</button>
+    </div>
+  </div>
+
+  <div class="streak">
+    <span>🔥</span>
+    <div><b id="streakNum">0</b> <span data-t="streakLbl"></span></div>
+    <div class="sep"></div>
+    <div><b id="freezeNum">1</b> <span data-t="freezeLbl"></span></div>
+  </div>
+
+  <section class="view on" id="view-today">
+    <div class="stage">
+      <div class="halo" id="halo">
+        <div class="deck gone" id="deck">
+          <div class="dcard"><div class="dmark">✶</div></div>
+          <div class="dcard"><div class="dmark">✶</div></div>
+          <div class="dcard"><div class="dmark">✶</div></div>
+          <div class="dcard"><div class="dmark">✶</div></div>
+          <div class="dcard"><div class="dmark">✶</div></div>
+        </div>
+        <div class="card" id="card" onclick="flipCard()">
+          <div class="face back"><div class="sigil"><span>✶</span></div></div>
+          <div class="face front">
+            <div class="frame">
+              <div class="num" id="fNum">—</div>
+              <div class="glyph" id="fGlyph">✶</div>
+              <div class="cname" id="fName">—</div>
+              <div class="pos" id="fPos" style="display:none;"></div>
+              <div class="upr" id="fKw">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tap-hint" id="tapHint" style="display:none;" data-t="tapHint"></div>
+    </div>
+
+    <div class="panel" id="moodPanel">
+      <h2 id="moodGreeting" data-t="moodTitle"></h2>
+      <div class="sub" data-t="moodSub"></div>
+      <div class="moods" id="moods">
+        <div class="mood" data-m="love"><span class="me">💗</span><span class="ml" data-mood="love"></span></div>
+        <div class="mood" data-m="work"><span class="me">⚡</span><span class="ml" data-mood="work"></span></div>
+        <div class="mood" data-m="calm"><span class="me">🌙</span><span class="ml" data-mood="calm"></span></div>
+        <div class="mood" data-m="worry"><span class="me">🌫️</span><span class="ml" data-mood="worry"></span></div>
+        <div class="mood" data-m="hope"><span class="me">✨</span><span class="ml" data-mood="hope"></span></div>
+      </div>
+      <button class="btn" id="drawBtn" disabled onclick="drawCard()" data-t="drawBtn"></button>
+    </div>
+
+    <div id="readingWrap" style="display:none;">
+      <div class="reading">
+        <span class="focus-tag" id="focusTag"></span>
+        <div class="kw" id="rKw"></div>
+        <div class="seg"><div class="si">🔮</div><div class="sc">
+          <h4 data-t="segEssence"></h4><p id="rEssence"></p></div></div>
+        <div class="seg"><div class="si">🌿</div><div class="sc">
+          <h4 data-t="segDo"></h4><p id="rDo"></p></div></div>
+        <div class="seg"><div class="si">⚠️</div><div class="sc">
+          <h4 data-t="segAvoid"></h4><p id="rAvoid"></p></div></div>
+        <div class="seg"><div class="si">🕊️</div><div class="sc">
+          <h4 data-t="segAff"></h4><p class="aff" id="rAff"></p></div></div>
+      </div>
+
+      <div class="echo" id="echoBlock">
+        <div class="ico">🌗</div>
+        <h3 data-t="echoTitle"></h3>
+        <p id="echoIntro" data-t="echoText"></p>
+        <div class="echo-lockmsg" id="echoLock" style="display:none;"></div>
+        <div class="echo-opts" id="echoOpts">
+          <button onclick="echo('hit')" data-t="echoHit"></button>
+          <button onclick="echo('part')" data-t="echoPart"></button>
+          <button onclick="echo('miss')" data-t="echoMiss"></button>
+        </div>
+        <div class="echo-done" id="echoDone" style="display:none;"></div>
+      </div>
+
+      <button class="btn ghost" onclick="shareCard()" data-t="shareBtn"></button>
+    </div>
+  </section>
+
+  <section class="view" id="view-collect">
+    <div class="grid-head">
+      <h2 data-t="collTitle"></h2>
+      <div class="prog"><span id="collGot">0</span> <span data-t="collOf"></span></div>
+    </div>
+    <div class="bar"><i id="collBar" style="width:0%"></i></div>
+    <div class="grid" id="collGrid"></div>
+  </section>
+
+  <section class="view" id="view-journal">
+    <div class="grid-head">
+      <h2 data-t="jrnTitle"></h2>
+      <div class="prog" data-t="jrnSub"></div>
+    </div>
+    <div id="weekWrap" style="margin-top:20px;"></div>
+    <div id="journalList"></div>
+  </section>
+
+  <section class="view" id="view-ach">
+    <div class="grid-head">
+      <h2 data-t="achTitle"></h2>
+      <div class="prog"><span id="achGot">0</span> <span data-t="achOf"></span></div>
+    </div>
+    <div class="ach-grid" id="achGrid" style="margin-top:20px;"></div>
+  </section>
+</div>
+
+<div class="overlay" id="nameOverlay">
+  <div class="namebox">
+    <div class="ng">🌙</div>
+    <h2 data-t="nameTitle"></h2>
+    <p data-t="nameSub"></p>
+    <input type="text" id="nameInput" maxlength="20" placeholder="...">
+    <button class="btn" onclick="saveName()" data-t="nameBtn"></button>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div>
+    <div class="sharecard" id="sharecard">
+      <div class="sbrand">Lunaria · <span data-t="kicker"></span></div>
+      <div class="sglyph" id="sGlyph">✶</div>
+      <div class="sname" id="sName">—</div>
+      <div class="spos" id="sPos" style="display:none;"></div>
+      <div class="skw" id="sKw">—</div>
+      <div class="sdate" id="sDate">—</div>
+    </div>
+    <button class="btn" id="dlBtn" onclick="downloadCard()" data-t="dlBtn"></button>
+    <button class="btn ghost" onclick="closeShare()" data-t="closeBtn"></button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<nav>
+  <div class="nav-inner">
+    <button class="active" data-v="today" onclick="go('today',this)"><span class="ni">☀</span><span data-t="navToday"></span></button>
+    <button data-v="collect" onclick="go('collect',this)"><span class="ni">✦</span><span data-t="navColl"></span></button>
+    <button data-v="journal" onclick="go('journal',this)"><span class="ni">❧</span><span data-t="navJrn"></span></button>
+    <button data-v="ach" onclick="go('ach',this)"><span class="ni">🏆</span><span data-t="navAch"></span></button>
+  </div>
+</nav>
+
+<script>
+/* ============ Telegram Mini App init ============ */
+const TG=window.Telegram&&window.Telegram.WebApp?window.Telegram.WebApp:null;
+function tgReady(){
+  if(!TG) return;
+  try{
+    TG.ready();
+    TG.expand();
+    if(TG.disableVerticalSwipes) TG.disableVerticalSwipes();
+    // dark theme to match the app
+    try{TG.setHeaderColor('#080510');TG.setBackgroundColor('#080510');}catch(e){}
+    applySafeArea();
+    if(TG.onEvent) TG.onEvent('viewportChanged',applySafeArea);
+  }catch(e){}
+}
+function applySafeArea(){
+  if(!TG) return;
+  // content safe area (avoids Telegram header / home indicator)
+  const cs=TG.contentSafeAreaInset||{};
+  const sa=TG.safeAreaInset||{};
+  const top=(cs.top||0)+(sa.top||0);
+  const bot=(cs.bottom||0)+(sa.bottom||0);
+  document.documentElement.style.setProperty('--safe-top',top+'px');
+  document.documentElement.style.setProperty('--safe-bottom',bot+'px');
+}
+/* haptic helpers — safe no-ops outside Telegram */
+function hImpact(style){try{TG&&TG.HapticFeedback&&TG.HapticFeedback.impactOccurred(style);}catch(e){}}
+function hNotify(type){try{TG&&TG.HapticFeedback&&TG.HapticFeedback.notificationOccurred(type);}catch(e){}}
+function hSelect(){try{TG&&TG.HapticFeedback&&TG.HapticFeedback.selectionChanged();}catch(e){}}
+
+/* ============ atmosphere ============ */
+(function(){
+  const s=document.getElementById('stars');
+  for(let i=0;i<80;i++){const d=document.createElement('div');d.className='star';
+    const sz=Math.random()*2+1;d.style.width=d.style.height=sz+'px';
+    d.style.left=Math.random()*100+'%';d.style.top=Math.random()*100+'%';
+    d.style.animationDelay=Math.random()*5+'s';s.appendChild(d);}
+  const e=document.getElementById('embers');
+  for(let i=0;i<18;i++){const d=document.createElement('div');d.className='ember';
+    d.style.left=Math.random()*100+'%';const dur=Math.random()*10+12;
+    d.style.animationDuration=dur+'s';d.style.animationDelay=Math.random()*dur+'s';e.appendChild(d);}
+})();
+
+/* ============ i18n ============ */
+const I18N={
+ uk:{
+  kicker:'Карта Дня',streakLbl:'днів поспіль',freezeLbl:'заморозка',
+  tapHint:'торкнись, щоб відкрити',
+  moodTitle:'З яким настроєм входиш у день?',
+  moodTitleName:n=>n+', з яким настроєм входиш у день?',
+  moodSub:'Карта відгукнеться на твій фокус',drawBtn:'Витягнути карту',
+  segEssence:'Суть карти',segDo:'Що варто зробити',segAvoid:'Чого уникати',segAff:'Афірмація дня',
+  echoTitle:'Вечірнє відлуння',echoText:'Повернись увечері та відзнач — як карта відгукнулась у дні?',
+  echoLock:'🔒 Відлуння відкриється після 17:00 — повернись увечері.',
+  echoHit:'Влучила точно',echoPart:'Частково',echoMiss:'Повз',
+  shareBtn:'Поділитися картою',dlBtn:'Зберегти картинку',closeBtn:'Закрити',
+  collTitle:'Колекція арканів',collOf:'із 22 відкрито',
+  jrnTitle:'Щоденник',jrnSub:'історія твоїх карт і відлуння',
+  jrnEmpty:'Щоденник порожній. Витягни першу карту дня.',
+  achTitle:'Досягнення',achOf:'із 6 відкрито',
+  navToday:'Сьогодні',navColl:'Колекція',navJrn:'Щоденник',navAch:'Нагороди',
+  focus:'фокус',drawnToast:'Карту дня витягнуто ✶',echoToast:'Відлуння збережено 🌗',
+  alreadyToast:'Карту на сьогодні вже витягнуто. Повертайся завтра ✶',
+  freezeToast:'Пропущений день — використано заморозку ❄️',
+  resetToast:'Серія перервана — починаємо заново',
+  savedToast:'Картинку збережено 📥',
+  echoDone:t=>'Відлуння записано: «'+t+'». Завтрашня карта це врахує.',
+  achToast:t=>'🏆 Нове досягнення: '+t,
+  posUp:'пряме положення',posRev:'перевернуте',
+  nameTitle:'Як до тебе звертатись?',
+  nameSub:'Картала вестиме твій щоденник особисто для тебе',
+  nameBtn:'Почати',namePlaceholder:'Твоє ім’я',
+  weekTitle:'Підсумок тижня',weekSub:'останні 7 днів',
+  wDraws:'карт',wTopMood:'настрій',wHits:'влучань',
+  shareText:n=>'Моя карта дня — '+n+' ✶ Дізнайся свою у Lunaria',
+  moodName:{love:'кохання',work:'справа',calm:'спокій',worry:'тривога',hope:'надія'}
+ },
+ ru:{
+  kicker:'Карта Дня',streakLbl:'дней подряд',freezeLbl:'заморозка',
+  tapHint:'нажми, чтобы открыть',
+  moodTitle:'С каким настроем входишь в день?',
+  moodTitleName:n=>n+', с каким настроем входишь в день?',
+  moodSub:'Карта откликнется на твой фокус',drawBtn:'Вытянуть карту',
+  segEssence:'Суть карты',segDo:'Что стоит сделать',segAvoid:'Чего избегать',segAff:'Аффирмация дня',
+  echoTitle:'Вечернее эхо',echoText:'Вернись вечером и отметь — как карта откликнулась в дне?',
+  echoLock:'🔒 Эхо откроется после 17:00 — вернись вечером.',
+  echoHit:'Попало точно',echoPart:'Отчасти',echoMiss:'Мимо',
+  shareBtn:'Поделиться картой',dlBtn:'Сохранить картинку',closeBtn:'Закрыть',
+  collTitle:'Коллекция арканов',collOf:'из 22 открыто',
+  jrnTitle:'Дневник',jrnSub:'история твоих карт и эха',
+  jrnEmpty:'Дневник пуст. Вытяни первую карту дня.',
+  achTitle:'Достижения',achOf:'из 6 открыто',
+  navToday:'Сегодня',navColl:'Коллекция',navJrn:'Дневник',navAch:'Награды',
+  focus:'фокус',drawnToast:'Карта дня вытянута ✶',echoToast:'Эхо сохранено 🌗',
+  alreadyToast:'Карта на сегодня уже вытянута. Возвращайся завтра ✶',
+  freezeToast:'Пропущенный день — использована заморозка ❄️',
+  resetToast:'Серия прервана — начинаем заново',
+  savedToast:'Картинка сохранена 📥',
+  echoDone:t=>'Эхо записано: «'+t+'». Завтрашняя карта это учтёт.',
+  achToast:t=>'🏆 Новое достижение: '+t,
+  posUp:'прямое положение',posRev:'перевёрнутое',
+  nameTitle:'Как к тебе обращаться?',
+  nameSub:'Карта будет вести твой дневник лично для тебя',
+  nameBtn:'Начать',namePlaceholder:'Твоё имя',
+  weekTitle:'Итог недели',weekSub:'последние 7 дней',
+  wDraws:'карт',wTopMood:'настрой',wHits:'попаданий',
+  shareText:n=>'Моя карта дня — '+n+' ✶ Узнай свою в Lunaria',
+  moodName:{love:'любовь',work:'дело',calm:'покой',worry:'тревога',hope:'надежда'}
+ }
+};
+
+/* ============ deck — 22 Major Arcana ============ */
+const DECK=[
+ {n:'0',g:'🃏',
+  uk:{name:'Дурень',kw:'початок, стрибок віри',e:'День чистого аркуша. Те, що здається наївним, насправді — сміливість зробити перший крок.',d:'Дозволь собі почати без готового плану. Рух важливіший за карту місцевості.',a:'Уникай очікування ідеальних умов — їх не буде.',af:'Я довіряю шляху, навіть якщо не бачу його кінця.',
+   re:'Перевернутий Дурень попереджає про необдуманість. Сьогодні легко зробити крок не туди.',rd:'Перш ніж стрибати — постав ногу на землю й перевір опору.',ra:'Уникай рішень на емоційному пориві.',raf:'Я можу бути сміливим(ою) і уважним(ою) водночас.'},
+  ru:{name:'Шут',kw:'начало, прыжок веры',e:'День чистого листа. То, что кажется наивным, на деле — смелость сделать первый шаг.',d:'Позволь себе начать без готового плана. Движение важнее карты местности.',a:'Избегай ожидания идеальных условий — их не будет.',af:'Я доверяю пути, даже не видя его конца.',
+   re:'Перевёрнутый Шут предупреждает о необдуманности. Сегодня легко шагнуть не туда.',rd:'Прежде чем прыгать — поставь ногу на землю и проверь опору.',ra:'Избегай решений на эмоциональном порыве.',raf:'Я могу быть смелым(ой) и внимательным(ой) одновременно.'}},
+ {n:'I',g:'🪄',
+  uk:{name:'Маг',kw:'воля, ресурс',e:'Усе потрібне вже у твоїх руках. Сьогодні день дії, а не пошуку.',d:'Збери наявні ресурси в одну конкретну дію.',a:'Не розпорошуй силу на десять справ одразу.',af:'У мене є все, щоб втілити задумане.',
+   re:'Перевернутий Маг — про розсіяну силу або самообман. Перевір, чи дієш ти, чи лише говориш.',rd:'Поверни намір у реальну, видиму дію.',ra:'Уникай порожніх обіцянок собі та іншим.',raf:'Я перетворюю слова на справи.'},
+  ru:{name:'Маг',kw:'воля, ресурс',e:'Всё нужное уже у тебя в руках. Сегодня день действия, а не поиска.',d:'Собери имеющиеся ресурсы в одно конкретное действие.',a:'Не распыляй силу на десять дел сразу.',af:'У меня есть всё, чтобы воплотить задуманное.',
+   re:'Перевёрнутый Маг — про рассеянную силу или самообман. Проверь, действуешь ли ты или только говоришь.',rd:'Переведи намерение в реальное, видимое действие.',ra:'Избегай пустых обещаний себе и другим.',raf:'Я превращаю слова в дела.'}},
+ {n:'II',g:'🌙',
+  uk:{name:'Жриця',kw:'інтуїція, тиша',e:'Відповідь прийде не з розмови, а з паузи. Тихе знання сьогодні точніше за логіку.',d:'Зроби паузу й прислухайся до внутрішнього відчуття.',a:'Уникай поспішних висновків і зайвих слів.',af:'Я чую себе в тиші.',
+   re:'Перевернута Жриця — про ігнорування внутрішнього голосу. Ти знаєш відповідь, але глушиш її.',rd:'Дай собі тишу й чесно почуй те, що уникаєш.',ra:'Не заглушуй інтуїцію зовнішнім шумом.',raf:'Я довіряю тому, що відчуваю.'},
+  ru:{name:'Жрица',kw:'интуиция, тишина',e:'Ответ придёт не из разговора, а из паузы. Тихое знание сегодня точнее логики.',d:'Сделай паузу и прислушайся к внутреннему ощущению.',a:'Избегай поспешных выводов и лишних слов.',af:'Я слышу себя в тишине.',
+   re:'Перевёрнутая Жрица — про игнорирование внутреннего голоса. Ты знаешь ответ, но заглушаешь его.',rd:'Дай себе тишину и честно услышь то, что избегаешь.',ra:'Не заглушай интуицию внешним шумом.',raf:'Я доверяю тому, что чувствую.'}},
+ {n:'III',g:'🌿',
+  uk:{name:'Імператриця',kw:'зростання, турбота',e:'День про м’якість і родючість. Те, що росте повільно, сьогодні відгукнеться.',d:'Подбай про себе і про те, що потребує дбайливості.',a:'Не квапся та не вимагай миттєвого результату.',af:'Я дозволяю добру зростати у власному темпі.',
+   re:'Перевернута Імператриця — про знесилення від надмірної турботи про інших. Себе теж треба живити.',rd:'Поверни частину турботи собі.',ra:'Уникай самопожертви на шкоду власним силам.',raf:'Турбота про себе — не егоїзм.'},
+  ru:{name:'Императрица',kw:'рост, забота',e:'День про мягкость и плодородие. То, что растёт медленно, сегодня отзовётся.',d:'Позаботься о себе и о том, что требует бережности.',a:'Не торопись и не требуй мгновенного результата.',af:'Я позволяю хорошему расти в своём темпе.',
+   re:'Перевёрнутая Императрица — про истощение от чрезмерной заботы о других. Себя тоже нужно питать.',rd:'Верни часть заботы себе.',ra:'Избегай самопожертвования в ущерб своим силам.',raf:'Забота о себе — не эгоизм.'}},
+ {n:'IV',g:'🏛️',
+  uk:{name:'Імператор',kw:'структура, опора',e:'Хаос відступає там, де є рамка. Сьогодні порядок дає силу.',d:'Наведи лад в одній справі — і день стане стійким.',a:'Уникай імпульсивних рішень без опори.',af:'Я будую міцну основу для себе.',
+   re:'Перевернутий Імператор — про надмірний контроль або його втрату. Десь ти тиснеш надто сильно.',rd:'Послаб хватку там, де контроль уже шкодить.',ra:'Уникай жорсткості там, де потрібна гнучкість.',raf:'Я тримаю опору, не стискаючи її.'},
+  ru:{name:'Император',kw:'структура, опора',e:'Хаос отступает там, где есть рамка. Сегодня порядок даёт силу.',d:'Наведи порядок в одном деле — и день станет устойчивым.',a:'Избегай импульсивных решений без опоры.',af:'Я строю прочное основание для себя.',
+   re:'Перевёрнутый Император — про чрезмерный контроль или его потерю. Где-то ты давишь слишком сильно.',rd:'Ослабь хватку там, где контроль уже вредит.',ra:'Избегай жёсткости там, где нужна гибкость.',raf:'Я держу опору, не сжимая её.'}},
+ {n:'V',g:'🗝️',
+  uk:{name:'Ієрофант',kw:'традиція, наставник',e:'Сьогодні варто почути досвід інших. Не винаходь шлях заново.',d:'Запитай того, хто вже пройшов цей шлях.',a:'Не відкидай мудрість лише тому, що вона не нова.',af:'Я відкритий(а) вчитися в інших.',
+   re:'Перевернутий Ієрофант — про сліпе слідування правилам. Сьогодні твій власний шлях важливіший.',rd:'Постав під сумнів те, що робиш «бо так заведено».',ra:'Уникай чужих сценаріїв, які тобі не пасують.',raf:'Я маю право на власний шлях.'},
+  ru:{name:'Иерофант',kw:'традиция, наставник',e:'Сегодня стоит услышать опыт других. Не изобретай путь заново.',d:'Спроси того, кто уже прошёл этот путь.',a:'Не отвергай мудрость лишь потому, что она не нова.',af:'Я открыт(а) учиться у других.',
+   re:'Перевёрнутый Иерофант — про слепое следование правилам. Сегодня твой собственный путь важнее.',rd:'Поставь под сомнение то, что делаешь «потому что так принято».',ra:'Избегай чужих сценариев, которые тебе не подходят.',raf:'У меня есть право на свой путь.'}},
+ {n:'VI',g:'💞',
+  uk:{name:'Закохані',kw:'вибір, союз',e:'День ставить розвилку. Вибір — про серце, а не про страх.',d:'Обирай те, що відгукується всередині як щире «так».',a:'Не вирішуй із позиції страху чи провини.',af:'Я обираю те, що співзвучне мені.',
+   re:'Перевернуті Закохані — про внутрішній розлад або вибір не на свою користь. Перевір, чий це вибір.',rd:'Чесно визнай, чого хочеш саме ти.',ra:'Уникай рішень, продиктованих чужими очікуваннями.',raf:'Я обираю в злагоді із собою.'},
+  ru:{name:'Влюблённые',kw:'выбор, союз',e:'День ставит развилку. Выбор — про сердце, а не про страх.',d:'Выбирай то, что откликается внутри как искреннее «да».',a:'Не решай из позиции страха или вины.',af:'Я выбираю то, что созвучно мне.',
+   re:'Перевёрнутые Влюблённые — про внутренний разлад или выбор не в свою пользу. Проверь, чей это выбор.',rd:'Честно признай, чего хочешь именно ты.',ra:'Избегай решений, продиктованных чужими ожиданиями.',raf:'Я выбираю в согласии с собой.'}},
+ {n:'VII',g:'🐎',
+  uk:{name:'Колісниця',kw:'рух, контроль',e:'Енергії багато — напрям вирішує все. Перемога в того, хто не розпорошується.',d:'Спрямуй усю силу в одну ціль.',a:'Уникай руху в кількох напрямках одночасно.',af:'Я керую своїм рухом.',
+   re:'Перевернута Колісниця — про втрату напряму. Багато зусиль, але без керма.',rd:'Спершу визнач ціль, потім додавай швидкість.',ra:'Не дій просто заради руху.',raf:'Я знаю, куди прямую.'},
+  ru:{name:'Колесница',kw:'движение, контроль',e:'Энергии много — направление решает всё. Победа у того, кто не распыляется.',d:'Направь всю силу в одну цель.',a:'Избегай движения в нескольких направлениях сразу.',af:'Я управляю своим движением.',
+   re:'Перевёрнутая Колесница — про потерю направления. Много усилий, но без руля.',rd:'Сначала определи цель, потом добавляй скорость.',ra:'Не действуй просто ради движения.',raf:'Я знаю, куда направляюсь.'}},
+ {n:'VIII',g:'🦁',
+  uk:{name:'Сила',kw:'ніжна стійкість',e:'Сила сьогодні — це м’якість. Спокій приручає те, що тиск лише дратує.',d:'Дій із внутрішнім спокоєм, а не з натиском.',a:'Не тисни на ситуацію та на людей.',af:'Моя м’якість — це і є моя сила.',
+   re:'Перевернута Сила — про сумнів у собі або внутрішню напругу. Будь м’якшим(ою) до себе.',rd:'Постався до власної слабкості з терпінням.',ra:'Уникай самокритики там, де потрібна підтримка.',raf:'Я лагідний(а) до себе.'},
+  ru:{name:'Сила',kw:'нежная стойкость',e:'Сила сегодня — это мягкость. Спокойствие приручает то, что давление лишь злит.',d:'Действуй с внутренним спокойствием, а не с напором.',a:'Не дави на ситуацию и на людей.',af:'Моя мягкость — это и есть моя сила.',
+   re:'Перевёрнутая Сила — про сомнение в себе или внутреннее напряжение. Будь мягче к себе.',rd:'Отнесись к собственной слабости с терпением.',ra:'Избегай самокритики там, где нужна поддержка.',raf:'Я бережен(на) к себе.'}},
+ {n:'IX',g:'🕯️',
+  uk:{name:'Самітник',kw:'усамітнення, світло всередині',e:'День просить відійти вбік. Тиша — це місце, де чути головне.',d:'Виділи час побути на самоті із собою.',a:'Не заповнюй день зайвим шумом і людьми.',af:'У тиші я знаходжу свою відповідь.',
+   re:'Перевернутий Самітник — про надмірну ізоляцію. Усамітнення стало вже не опорою, а втечею.',rd:'Зроби крок назустріч людям, які тобі дорогі.',ra:'Уникай замикання в собі.',raf:'Я можу бути із собою і з іншими.'},
+  ru:{name:'Отшельник',kw:'уединение, свет внутри',e:'День просит отойти в сторону. Тишина — это место, где слышно главное.',d:'Выдели время побыть наедине с собой.',a:'Не заполняй день лишним шумом и людьми.',af:'В тишине я нахожу свой ответ.',
+   re:'Перевёрнутый Отшельник — про чрезмерную изоляцию. Уединение стало уже не опорой, а бегством.',rd:'Сделай шаг навстречу дорогим тебе людям.',ra:'Избегай замыкания в себе.',raf:'Я могу быть с собой и с другими.'}},
+ {n:'X',g:'☸️',
+  uk:{name:'Колесо Фортуни',kw:'зміна, цикл',e:'Щось повертається саме собою. Інерція дня — на твою користь.',d:'Прийми зміну й рухайся з нею, а не проти.',a:'Не чіпляйся за те, що вже минає.',af:'Я довіряю поворотам долі.',
+   re:'Перевернуте Колесо — про опір неминучому. Ти тримаєш те, що вже має відпуститись.',rd:'Відпусти контроль над тим, що від тебе не залежить.',ra:'Уникай боротьби з природним ходом подій.',raf:'Я приймаю зміни спокійно.'},
+  ru:{name:'Колесо Фортуны',kw:'перемена, цикл',e:'Что-то поворачивается само собой. Инерция дня — в твою пользу.',d:'Прими перемену и двигайся с ней, а не против.',a:'Не цепляйся за то, что уже уходит.',af:'Я доверяю поворотам судьбы.',
+   re:'Перевёрнутое Колесо — про сопротивление неизбежному. Ты держишь то, что уже должно отпуститься.',rd:'Отпусти контроль над тем, что от тебя не зависит.',ra:'Избегай борьбы с естественным ходом событий.',raf:'Я принимаю перемены спокойно.'}},
+ {n:'XI',g:'⚖️',
+  uk:{name:'Справедливість',kw:'баланс, чесність',e:'Сьогодні все повертається за заслугами. Чесність у дрібниці має вагу.',d:'Вчини чесно навіть там, де ніхто не бачить.',a:'Уникай напівправди та зручних компромісів із совістю.',af:'Я обираю чесність як основу.',
+   re:'Перевернута Справедливість — про уникання відповідальності. Десь ти знаєш правду, але мовчиш.',rd:'Визнай свою частину в ситуації чесно.',ra:'Не перекладай провину на обставини.',raf:'Я відповідаю за свої рішення.'},
+  ru:{name:'Справедливость',kw:'баланс, честность',e:'Сегодня всё возвращается по заслугам. Честность в мелочи имеет вес.',d:'Поступи честно даже там, где никто не видит.',a:'Избегай полуправды и удобных компромиссов с совестью.',af:'Я выбираю честность как основу.',
+   re:'Перевёрнутая Справедливость — про уход от ответственности. Где-то ты знаешь правду, но молчишь.',rd:'Признай свою часть в ситуации честно.',ra:'Не перекладывай вину на обстоятельства.',raf:'Я отвечаю за свои решения.'}},
+ {n:'XII',g:'🙃',
+  uk:{name:'Повішений',kw:'пауза, новий кут',e:'Не час діяти — час подивитися інакше. Рішення з’явиться, щойно зміниш ракурс.',d:'Поглянь на ситуацію з протилежного боку.',a:'Не форсуй події силою.',af:'Я бачу нове, коли відпускаю старе.',
+   re:'Перевернутий Повішений — про застій. Пауза затягнулась і стала зволіканням.',rd:'Зроби нарешті крок, на який давно зважуєшся.',ra:'Уникай нескінченного очікування «слушного моменту».',raf:'Я готовий(а) зрушити з місця.'},
+  ru:{name:'Повешенный',kw:'пауза, новый угол',e:'Не время действовать — время посмотреть иначе. Решение появится, как только сменишь ракурс.',d:'Взгляни на ситуацию с противоположной стороны.',a:'Не форсируй события силой.',af:'Я вижу новое, когда отпускаю старое.',
+   re:'Перевёрнутый Повешенный — про застой. Пауза затянулась и стала промедлением.',rd:'Сделай наконец шаг, на который давно решаешься.',ra:'Избегай бесконечного ожидания «подходящего момента».',raf:'Я готов(а) сдвинуться с места.'}},
+ {n:'XIII',g:'🦋',
+  uk:{name:'Смерть',kw:'завершення, оновлення',e:'Щось віджило — відпусти без жалю. День розчищає місце для важливішого.',d:'Заверши те, що давно потребує крапки.',a:'Не утримуй те, що вже неживе.',af:'Я відпускаю, щоб дати місце новому.',
+   re:'Перевернута Смерть — про страх змін. Ти тримаєшся за старе, бо нове лякає.',rd:'Назви, чого саме ти боїшся в завершенні.',ra:'Уникай штучного продовження того, що вже скінчилось.',raf:'Зміна — це не втрата, а перехід.'},
+  ru:{name:'Смерть',kw:'завершение, обновление',e:'Что-то отжило — отпусти без сожаления. День расчищает место для важного.',d:'Заверши то, что давно требует точки.',a:'Не удерживай то, что уже неживо.',af:'Я отпускаю, чтобы дать место новому.',
+   re:'Перевёрнутая Смерть — про страх перемен. Ты держишься за старое, потому что новое пугает.',rd:'Назови, чего именно ты боишься в завершении.',ra:'Избегай искусственного продления того, что уже кончилось.',raf:'Перемена — это не потеря, а переход.'}},
+ {n:'XIV',g:'🏺',
+  uk:{name:'Поміркованість',kw:'міра, потік',e:'Сьогодні виграє плавність. Не кидайся в крайнощі — дозуй і тримай ритм.',d:'Змішуй, дозуй, шукай золоту середину.',a:'Уникай різких крайнощів у будь-чому.',af:'Я рухаюсь у власному рівному ритмі.',
+   re:'Перевернута Поміркованість — про втрату балансу. Десь ти перегинаєш — у роботі, емоціях чи відпочинку.',rd:'Знайди, де порушено міру, і вирівняй це.',ra:'Уникай крайнощів «все або нічого».',raf:'Я повертаю собі рівновагу.'},
+  ru:{name:'Умеренность',kw:'мера, поток',e:'Сегодня выигрывает плавность. Не бросайся в крайности — дозируй и держи ритм.',d:'Смешивай, дозируй, ищи золотую середину.',a:'Избегай резких крайностей в чём бы то ни было.',af:'Я двигаюсь в своём ровном ритме.',
+   re:'Перевёрнутая Умеренность — про потерю баланса. Где-то ты перегибаешь — в работе, эмоциях или отдыхе.',rd:'Найди, где нарушена мера, и выровняй это.',ra:'Избегай крайностей «всё или ничего».',raf:'Я возвращаю себе равновесие.'}},
+ {n:'XV',g:'⛓️',
+  uk:{name:'Диявол',kw:'прив’язка, тінь',e:'Поглянь, що тримає тебе на ланцюгу — звичка, страх, чужа думка.',d:'Назви те, що насправді тебе обмежує.',a:'Не вдавай, що ланцюга немає.',af:'Побачити — це вже наполовину звільнитися.',
+   re:'Перевернутий Диявол — добрий знак: ланцюг слабшає. Сьогодні є сила розірвати залежність.',rd:'Зроби конкретний крок до звільнення від того, що тримає.',ra:'Не повертайся до старої пастки на півдорозі.',raf:'Я звільняюсь від того, що мене тримало.'},
+  ru:{name:'Дьявол',kw:'привязка, тень',e:'Загляни, что держит тебя на цепи — привычка, страх, чужое мнение.',d:'Назови то, что на самом деле тебя ограничивает.',a:'Не делай вид, что цепи нет.',af:'Увидеть — это уже наполовину освободиться.',
+   re:'Перевёрнутый Дьявол — добрый знак: цепь слабеет. Сегодня есть сила разорвать зависимость.',rd:'Сделай конкретный шаг к освобождению от того, что держит.',ra:'Не возвращайся к старой ловушке на полпути.',raf:'Я освобождаюсь от того, что меня держало.'}},
+ {n:'XVI',g:'⚡',
+  uk:{name:'Вежа',kw:'злам, звільнення',e:'Якщо щось руйнується — нехай. Те, що стоїть не на правді, має впасти.',d:'Дозволь старій конструкції впасти без боротьби.',a:'Не відбудовуй те, що тримається на хибній основі.',af:'Падіння старого звільняє місце для справжнього.',
+   re:'Перевернута Вежа — про відтерміновану кризу. Ти втримуєш те, що однаково впаде.',rd:'Краще самому(ій) розібрати хитку конструкцію, ніж чекати обвалу.',ra:'Уникай латання того, що потребує перебудови.',raf:'Я обираю чесне оновлення замість страху.'},
+  ru:{name:'Башня',kw:'слом, освобождение',e:'Если что-то рушится — пусть. То, что стоит не на правде, должно упасть.',d:'Позволь старой конструкции упасть без борьбы.',a:'Не отстраивай то, что держится на ложном основании.',af:'Падение старого освобождает место для настоящего.',
+   re:'Перевёрнутая Башня — про отложенный кризис. Ты удерживаешь то, что всё равно упадёт.',rd:'Лучше самому(ой) разобрать шаткую конструкцию, чем ждать обвала.',ra:'Избегай латания того, что требует перестройки.',raf:'Я выбираю честное обновление вместо страха.'}},
+ {n:'XVII',g:'⭐',
+  uk:{name:'Зірка',kw:'надія, зцілення',e:'День м’якого світла. Після важкого — видих. Тиха надія сьогодні обґрунтована.',d:'Дозволь собі повірити в добрий результат.',a:'Не знецінюй проблиски світла, що вже з’явились.',af:'Я дозволяю собі надіятись.',
+   re:'Перевернута Зірка — про втрату віри. Сьогодні легко піддатися зневірі — не дай їй слова.',rd:'Згадай те, що раніше давало тобі надію.',ra:'Уникай думок, що «нічого не зміниться».',raf:'Світло не зникло — я просто його не бачу зараз.'},
+  ru:{name:'Звезда',kw:'надежда, исцеление',e:'День мягкого света. После трудного — выдох. Тихая надежда сегодня обоснована.',d:'Позволь себе поверить в добрый исход.',a:'Не обесценивай проблески света, что уже появились.',af:'Я позволяю себе надеяться.',
+   re:'Перевёрнутая Звезда — про потерю веры. Сегодня легко поддаться унынию — не дай ему слова.',rd:'Вспомни то, что раньше давало тебе надежду.',ra:'Избегай мыслей, что «ничего не изменится».',raf:'Свет не исчез — я просто не вижу его сейчас.'}},
+ {n:'XVIII',g:'🌕',
+  uk:{name:'Місяць',kw:'туман, почуття',e:'Не все ясно — і це нормально. Не ухвалюй великих рішень у тумані.',d:'Дай почуттям осісти, перш ніж діяти.',a:'Уникай важливих рішень, поки немає ясності.',af:'Я дозволяю туману розвіятися сам.',
+   re:'Перевернутий Місяць — туман починає розсіюватись. Те, що лякало, стає зрозумілішим.',rd:'Поглянь ще раз на страх, який уже втрачає силу.',ra:'Не довіряй уяві більше, ніж фактам.',raf:'Я бачу ситуацію дедалі ясніше.'},
+  ru:{name:'Луна',kw:'туман, чувства',e:'Не всё ясно — и это нормально. Не принимай больших решений в тумане.',d:'Дай чувствам осесть, прежде чем действовать.',a:'Избегай важных решений, пока нет ясности.',af:'Я позволяю туману рассеяться самому.',
+   re:'Перевёрнутая Луна — туман начинает рассеиваться. То, что пугало, становится понятнее.',rd:'Взгляни ещё раз на страх, который уже теряет силу.',ra:'Не доверяй воображению больше, чем фактам.',raf:'Я вижу ситуацию всё яснее.'}},
+ {n:'XIX',g:'☀️',
+  uk:{name:'Сонце',kw:'радість, ясність',e:'Один із найсвітліших днів. Проста радість сьогодні і є сенсом.',d:'Дозволь собі просту, відкриту радість.',a:'Не ускладнюй те, що сьогодні легке.',af:'Я впускаю світло у свій день.',
+   re:'Перевернуте Сонце — радість поруч, але ти її не помічаєш. Світло приглушене власними думками.',rd:'Свідомо зверни увагу на те хороше, що вже є.',ra:'Не затьмарюй світлий день очікуванням гіршого.',raf:'Я дозволяю собі помічати радість.'},
+  ru:{name:'Солнце',kw:'радость, ясность',e:'Один из самых светлых дней. Простая радость сегодня и есть смысл.',d:'Позволь себе простую, открытую радость.',a:'Не усложняй то, что сегодня лёгкое.',af:'Я впускаю свет в свой день.',
+   re:'Перевёрнутое Солнце — радость рядом, но ты её не замечаешь. Свет приглушён собственными мыслями.',rd:'Сознательно обрати внимание на то хорошее, что уже есть.',ra:'Не омрачай светлый день ожиданием худшего.',raf:'Я позволяю себе замечать радость.'}},
+ {n:'XX',g:'📯',
+  uk:{name:'Суд',kw:'поклик, пробудження',e:'Сьогодні щось кличе тебе з глибини. Це привід, а не випадковість.',d:'Прислухайся до внутрішнього поклику й дай собі відповідь.',a:'Не відмахуйся від того, що відгукується глибоко.',af:'Я чую свій поклик і відгукуюсь на нього.',
+   re:'Перевернутий Суд — про самокритику й сумнів. Ти судиш себе суворіше, ніж заслуговуєш.',rd:'Постався до себе так, як поставився(лась) би до друга.',ra:'Уникай надмірно суворого вироку собі.',raf:'Я маю право на співчуття до себе.'},
+  ru:{name:'Суд',kw:'зов, пробуждение',e:'Сегодня что-то зовёт тебя из глубины. Это повод, а не случайность.',d:'Прислушайся к внутреннему зову и дай себе ответ.',a:'Не отмахивайся от того, что откликается глубоко.',af:'Я слышу свой зов и откликаюсь на него.',
+   re:'Перевёрнутый Суд — про самокритику и сомнение. Ты судишь себя строже, чем заслуживаешь.',rd:'Отнесись к себе так, как отнёсся(лась) бы к другу.',ra:'Избегай чрезмерно строгого приговора себе.',raf:'У меня есть право на сострадание к себе.'}},
+ {n:'XXI',g:'🌍',
+  uk:{name:'Світ',kw:'завершеність, цілісність',e:'Коло замикається. День про вдячність і тихе «вийшло».',d:'Визнай, як далеко ти вже пройшов(ла).',a:'Не знецінюй власний шлях і його результат.',af:'Я вдячний(а) за пройдений шлях.',
+   re:'Перевернутий Світ — про незавершеність. Один крок до фіналу ще лишився — не кидай на півдорозі.',rd:'Доведи до кінця те, що майже завершене.',ra:'Уникай зупинки за крок до результату.',raf:'Я доводжу почате до завершення.'},
+  ru:{name:'Мир',kw:'завершённость, целостность',e:'Круг замыкается. День про благодарность и тихое «получилось».',d:'Признай, как далеко ты уже прошёл(ла).',a:'Не обесценивай свой путь и его результат.',af:'Я благодарен(на) за пройденный путь.',
+   re:'Перевёрнутый Мир — про незавершённость. Один шаг до финала ещё остался — не бросай на полпути.',rd:'Доведи до конца то, что почти завершено.',ra:'Избегай остановки за шаг до результата.',raf:'Я довожу начатое до завершения.'}}
+];
+
+/* ============ achievements ============ */
+const ACHS=[
+ {id:'first',i:'✶',uk:{t:'Перший крок',d:'Витягнути першу карту'},ru:{t:'Первый шаг',d:'Вытянуть первую карту'}},
+ {id:'streak7',i:'🔥',uk:{t:'Тиждень із картами',d:'7 днів поспіль'},ru:{t:'Неделя с картами',d:'7 дней подряд'}},
+ {id:'echo5',i:'🌗',uk:{t:'Відлуння',d:'Відзначити 5 вечірніх відлунь'},ru:{t:'Эхо',d:'Отметить 5 вечерних эх'}},
+ {id:'hits5',i:'🎯',uk:{t:'Влучання',d:'5 точних відлунь'},ru:{t:'Попадание',d:'5 точных эх'}},
+ {id:'half',i:'🌓',uk:{t:'Пів колоди',d:'Відкрити 11 арканів'},ru:{t:'Полколоды',d:'Открыть 11 арканов'}},
+ {id:'full',i:'🌟',uk:{t:'Повна колода',d:'Зібрати всі 22 аркани'},ru:{t:'Полная колода',d:'Собрать все 22 аркана'}}
+];
+
+/* ============ persistence — Telegram CloudStorage + localStorage fallback ============ */
+const KEY='lunaria_v1';
+let memStore=null;
+function loadLocal(){
+  try{const r=localStorage.getItem(KEY);return r?JSON.parse(r):null;}catch(e){return memStore;}
+}
+function saveState(){
+  const data=JSON.stringify(S);
+  try{localStorage.setItem(KEY,data);}catch(e){memStore=JSON.parse(data);}
+  // mirror to Telegram cloud (syncs across the user's devices)
+  try{if(TG&&TG.CloudStorage) TG.CloudStorage.setItem(KEY,data);}catch(e){}
+}
+/* CloudStorage is async — load it, merge, then boot */
+function loadCloudThen(cb){
+  if(TG&&TG.CloudStorage&&TG.CloudStorage.getItem){
+    let done=false;
+    const finish=val=>{if(done)return;done=true;cb(val);};
+    try{
+      TG.CloudStorage.getItem(KEY,(err,val)=>{
+        if(!err&&val){try{finish(JSON.parse(val));return;}catch(e){}}
+        finish(null);
+      });
+    }catch(e){finish(null);}
+    setTimeout(()=>finish(null),1500); // network safety timeout
+  }else cb(null);
+}
+
+/* ============ state ============ */
+const today=new Date().toISOString().slice(0,10);
+function dateDiff(a,b){return Math.round((new Date(b)-new Date(a))/86400000);}
+const defaultState={
+  name:null,lang:'uk',streak:0,freeze:1,lastDay:null,
+  collected:[],echoCount:0,hitCount:0,achievements:[],
+  drawnToday:null,reversedToday:false,moodToday:null,echoToday:null,
+  drawnDate:null,journal:[]
+};
+let S=Object.assign({},defaultState,loadLocal()||{});
+let LANG=S.lang||'uk';
+let selMood=null, flipped=false;
+
+/* ============ i18n apply ============ */
+function applyLang(){
+  const T=I18N[LANG];
+  document.documentElement.lang=LANG;
+  document.querySelectorAll('[data-t]').forEach(el=>{
+    const k=el.dataset.t;if(T[k]!==undefined&&typeof T[k]==='string') el.textContent=T[k];
+  });
+  document.querySelectorAll('.ml').forEach(el=>{el.textContent=T.moodName[el.dataset.mood];});
+  document.getElementById('nameInput').placeholder=T.namePlaceholder;
+  document.getElementById('langBtn').textContent=LANG==='uk'?'UA':'RU';
+  const g=document.getElementById('moodGreeting');
+  g.textContent=S.name?T.moodTitleName(S.name):T.moodTitle;
+  if(S.drawnToday!==null){fillFront(S.drawnToday);if(flipped) showReading();}
+  if(S.echoToday){
+    const lm={hit:T.echoHit,part:T.echoPart,miss:T.echoMiss};
+    document.getElementById('echoDone').textContent=T.echoDone(lm[S.echoToday]);
+  }
+  document.getElementById('echoLock').textContent=T.echoLock;
+  renderCollection();renderJournal();renderAch();
+}
+function toggleLang(){LANG=LANG==='uk'?'ru':'uk';S.lang=LANG;hSelect();saveState();applyLang();}
+
+/* ============ name ============ */
+function maybeAskName(){
+  if(!S.name) document.getElementById('nameOverlay').classList.add('on');
+}
+function saveName(){
+  const v=document.getElementById('nameInput').value.trim();
+  if(v) S.name=v;
+  document.getElementById('nameOverlay').classList.remove('on');
+  hImpact('light');saveState();applyLang();
+}
+
+/* ============ streak ============ */
+function evaluateStreak(){
+  if(!S.lastDay) return;
+  const gap=dateDiff(S.lastDay,today);
+  if(gap<=1) return;
+  if(gap===2 && S.freeze>0){S.freeze--;toast(I18N[LANG].freezeToast);}
+  else if(gap>=2){S.streak=0;toast(I18N[LANG].resetToast);}
+  saveState();
+}
+
+/* ============ mood ============ */
+document.querySelectorAll('.mood').forEach(m=>{
+  m.onclick=()=>{
+    document.querySelectorAll('.mood').forEach(x=>x.classList.remove('sel'));
+    m.classList.add('sel');selMood=m.dataset.m;hSelect();
+    document.getElementById('drawBtn').disabled=false;
+  };
+});
+
+/* ============ draw — full shuffle ritual (JS-driven, no CSS keyframe conflicts) ============ */
+function drawCard(){
+  if(S.drawnDate===today){toast(I18N[LANG].alreadyToast);return;}
+  unlockAudio();hImpact('medium');
+  document.getElementById('drawBtn').disabled=true;
+
+  const deck=document.getElementById('deck');
+  const card=document.getElementById('card');
+  const hint=document.getElementById('tapHint');
+  const cards=Array.from(deck.querySelectorAll('.dcard'));
+
+  // pre-pick the result — animation is pure presentation
+  const idx=Math.floor(Math.random()*DECK.length);
+  const reversed=Math.random()<0.5;
+
+  // helper: set transform on one card
+  const set=(el,x,y,rot,sc)=>{
+    el.style.transform='translate('+x+'px,'+y+'px) rotate('+rot+'deg) scale('+(sc||1)+')';
+  };
+  // helper: put every card into a neat collapsed stack
+  const toStack=()=>{
+    const off=[[-3,3,-2],[2,2,1.5],[0,0,0],[-2,-2,-1],[3,-3,2]];
+    cards.forEach((el,i)=>{el.style.opacity='1';el.classList.remove('chosen');
+      set(el,off[i][0],off[i][1],off[i][2],1);});
+  };
+
+  // reveal the deck, start collapsed, no transition for the initial placement
+  card.classList.add('hidden');
+  deck.classList.remove('gone');
+  cards.forEach(el=>{el.style.transition='none';});
+  toStack();
+  void deck.offsetWidth;                       // commit the start state
+  cards.forEach(el=>{el.style.transition='';}); // re-enable transitions
+
+  // PHASE 1 — fan out into an arc (starts ~60ms in, animates 0.6s)
+  const fan=[[-130,14,-24],[-66,-2,-12],[0,-12,0],[66,-2,12],[130,14,24]];
+  setTimeout(()=>{
+    cards.forEach((el,i)=>set(el,fan[i][0],fan[i][1],fan[i][2],1));
+    whoosh();
+  },60);
+
+  // PHASE 2 — riffle: two passes of cards crossing over each other
+  // each pass is a single transform change → the shared transition makes it smooth
+  setTimeout(()=>{
+    cards.forEach((el,i)=>{const s=i%2?1:-1;set(el,s*40,-26,s*10,1);});
+    whoosh();hImpact('light');
+  },760);
+  setTimeout(()=>{
+    cards.forEach((el,i)=>{const s=i%2?1:-1;set(el,-s*40,26,-s*10,1);});
+  },1180);
+  setTimeout(()=>{
+    cards.forEach((el,i)=>{const s=i%2?1:-1;set(el,s*30,-18,s*7,1);});
+    hImpact('light');
+  },1600);
+
+  // PHASE 3 — collect back into a neat stack
+  setTimeout(()=>{toStack();hImpact('soft');},2020);
+
+  // PHASE 4 — the chosen (middle) card lifts out of the stack
+  setTimeout(()=>{
+    const chosen=cards[2];
+    chosen.classList.add('chosen');
+    set(chosen,0,-64,0,1.06);
+    cards.forEach((el,i)=>{if(i!==2) el.style.opacity='.3';});
+    softBell();hImpact('medium');
+  },2620);
+
+  // PHASE 5 — hide the deck, reveal the real card as the day's card
+  setTimeout(()=>{
+    deck.classList.add('gone');
+    cards.forEach(el=>{el.classList.remove('chosen');el.style.opacity='';el.style.transform='';});
+    card.classList.remove('hidden');
+
+    S.drawnToday=idx;S.reversedToday=reversed;S.moodToday=selMood;S.drawnDate=today;
+    S.streak=(S.streak||0)+1;S.lastDay=today;
+    if(!S.collected.includes(idx)) S.collected.push(idx);
+    S.journal.unshift({date:today,idx:idx,rev:reversed,mood:selMood,echo:null});
+    document.getElementById('streakNum').textContent=S.streak;
+    document.getElementById('freezeNum').textContent=S.freeze;
+    fillFront(idx);
+    document.getElementById('halo').classList.add('lit');
+    document.getElementById('moodPanel').style.display='none';
+    hint.style.display='block';
+    softBell();
+    checkAch('first');
+    if(S.streak>=7) checkAch('streak7');
+    if(S.collected.length>=11) checkAch('half');
+    if(S.collected.length>=22) checkAch('full');
+    saveState();renderCollection();renderJournal();renderAch();
+    toast(I18N[LANG].drawnToast);
+  },3320);
+}
+
+function fillFront(idx){
+  const c=DECK[idx],rev=S.reversedToday,L=c[LANG];
+  document.getElementById('fNum').textContent='Аркан '+c.n;
+  const gl=document.getElementById('fGlyph');
+  gl.textContent=c.g;gl.classList.toggle('rev',rev);
+  document.getElementById('fName').textContent=L.name;
+  document.getElementById('fKw').textContent=L.kw;
+  const pos=document.getElementById('fPos');
+  pos.style.display='block';
+  pos.textContent=rev?I18N[LANG].posRev:I18N[LANG].posUp;
+}
+
+function flipCard(){
+  if(S.drawnToday===null) return;
+  flipped=!flipped;
+  document.getElementById('card').classList.toggle('flipped',flipped);
+  if(flipped){chime();deepHit();hImpact('rigid');
+    document.getElementById('tapHint').style.display='none';showReading();}
+}
+
+function showReading(){
+  const c=DECK[S.drawnToday],rev=S.reversedToday,L=c[LANG],T=I18N[LANG];
+  document.getElementById('focusTag').textContent=T.focus+': '+T.moodName[S.moodToday];
+  document.getElementById('rKw').textContent='«'+L.kw+'»';
+  document.getElementById('rEssence').textContent=rev?L.re:L.e;
+  document.getElementById('rDo').textContent=rev?L.rd:L.d;
+  document.getElementById('rAvoid').textContent=rev?L.ra:L.a;
+  document.getElementById('rAff').textContent='«'+(rev?L.raf:L.af)+'»';
+  document.getElementById('readingWrap').style.display='block';
+  setupEcho();
+}
+
+/* ============ echo ============ */
+function setupEcho(){
+  const block=document.getElementById('echoBlock');
+  const opts=document.getElementById('echoOpts');
+  const lock=document.getElementById('echoLock');
+  const done=document.getElementById('echoDone');
+  const intro=document.getElementById('echoIntro');
+  if(S.echoToday){
+    opts.style.display='none';lock.style.display='none';intro.style.display='none';
+    done.style.display='block';block.classList.remove('echo-locked');
+    const T=I18N[LANG],lm={hit:T.echoHit,part:T.echoPart,miss:T.echoMiss};
+    done.textContent=T.echoDone(lm[S.echoToday]);return;
+  }
+  const hour=new Date().getHours();
+  if(hour<17){
+    block.classList.add('echo-locked');
+    lock.style.display='block';intro.style.display='none';done.style.display='none';
+  }else{
+    block.classList.remove('echo-locked');
+    lock.style.display='none';intro.style.display='block';
+    opts.style.display='flex';done.style.display='none';
+  }
+}
+function echo(val){
+  S.echoToday=val;S.echoCount=(S.echoCount||0)+1;
+  if(val==='hit') S.hitCount=(S.hitCount||0)+1;
+  if(S.journal[0]) S.journal[0].echo=val;
+  document.getElementById('echoOpts').style.display='none';
+  const T=I18N[LANG],lm={hit:T.echoHit,part:T.echoPart,miss:T.echoMiss};
+  const d=document.getElementById('echoDone');
+  d.style.display='block';d.textContent=T.echoDone(lm[val]);
+  hImpact('light');softBell();
+  if(S.echoCount>=5) checkAch('echo5');
+  if(S.hitCount>=5) checkAch('hits5');
+  saveState();renderJournal();
+  toast(T.echoToast);
+}
+
+/* ============ achievements ============ */
+function checkAch(id){
+  if(S.achievements.includes(id)) return;
+  S.achievements.push(id);saveState();
+  const a=ACHS.find(x=>x.id===id);
+  hNotify('success');softBell();
+  toast(I18N[LANG].achToast(a[LANG].t));
+  renderAch();
+}
+function renderAch(){
+  const g=document.getElementById('achGrid');g.innerHTML='';
+  ACHS.forEach(a=>{
+    const got=S.achievements.includes(a.id);
+    const d=document.createElement('div');
+    d.className='ach '+(got?'unlocked':'locked');
+    d.innerHTML=`<div class="ai">${got?a.i:'🔒'}</div>
+      <div class="at"><b>${a[LANG].t}</b><span>${a[LANG].d}</span></div>`;
+    g.appendChild(d);
+  });
+  document.getElementById('achGot').textContent=S.achievements.length;
+}
+
+/* ============ share ============ */
+function shareCard(){
+  const c=DECK[S.drawnToday],rev=S.reversedToday,L=c[LANG];
+  const sg=document.getElementById('sGlyph');
+  sg.textContent=c.g;sg.classList.toggle('rev',rev);
+  document.getElementById('sName').textContent=L.name;
+  const sp=document.getElementById('sPos');
+  sp.style.display='block';
+  sp.textContent=rev?I18N[LANG].posRev:I18N[LANG].posUp;
+  document.getElementById('sKw').textContent='«'+L.kw+'»';
+  document.getElementById('sDate').textContent=
+    new Date().toLocaleDateString(LANG==='uk'?'uk-UA':'ru-RU',{day:'numeric',month:'long'});
+  document.getElementById('overlay').classList.add('on');
+  hImpact('light');
+}
+function closeShare(){document.getElementById('overlay').classList.remove('on');}
+
+function downloadCard(){
+  const c=DECK[S.drawnToday],rev=S.reversedToday,L=c[LANG],T=I18N[LANG];
+  const W=720,H=1100,cv=document.createElement('canvas');
+  cv.width=W;cv.height=H;const x=cv.getContext('2d');
+  const bg=x.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,'#301d4a');bg.addColorStop(1,'#0c0717');
+  x.fillStyle=bg;x.fillRect(0,0,W,H);
+  const rg=x.createRadialGradient(W/2,0,0,W/2,0,W);
+  rg.addColorStop(0,'rgba(96,55,135,.6)');rg.addColorStop(1,'rgba(96,55,135,0)');
+  x.fillStyle=rg;x.fillRect(0,0,W,H);
+  x.strokeStyle='#d9a94e';x.lineWidth=3;x.strokeRect(28,28,W-56,H-56);
+  x.textAlign='center';
+  x.fillStyle='#d9a94e';x.font='28px Cormorant Garamond, serif';
+  x.fillText('LUNARIA · '+T.kicker.toUpperCase(),W/2,130);
+  x.save();x.translate(W/2,400);if(rev) x.rotate(Math.PI);
+  x.font='220px serif';x.fillStyle='#eccf94';x.fillText(c.g,0,80);x.restore();
+  x.fillStyle='#f4eeff';x.font='bold 76px Cormorant Garamond, serif';
+  x.fillText(L.name,W/2,600);
+  x.fillStyle='#eccf94';x.font='24px Jost, sans-serif';
+  x.fillText((rev?T.posRev:T.posUp).toUpperCase(),W/2,648);
+  x.fillStyle='#eccf94';x.font='italic 40px Cormorant Garamond, serif';
+  x.fillText('«'+L.kw+'»',W/2,730);
+  x.strokeStyle='rgba(217,169,78,.3)';x.lineWidth=1;
+  x.beginPath();x.moveTo(180,820);x.lineTo(W-180,820);x.stroke();
+  x.fillStyle='#b7a4d6';x.font='24px Jost, sans-serif';
+  const dt=new Date().toLocaleDateString(LANG==='uk'?'uk-UA':'ru-RU',{day:'numeric',month:'long'});
+  x.fillText(dt.toUpperCase(),W/2,880);
+  if(S.name){x.fillStyle='#8a7aa8';x.font='italic 26px Cormorant Garamond, serif';
+    x.fillText(S.name,W/2,940);}
+  const a=document.createElement('a');
+  a.download='lunaria-'+today+'.png';a.href=cv.toDataURL('image/png');a.click();
+  hImpact('light');toast(T.savedToast);
+}
+
+/* ============ collection ============ */
+function renderCollection(){
+  const g=document.getElementById('collGrid');g.innerHTML='';
+  DECK.forEach((c,i)=>{
+    const got=S.collected.includes(i);
+    const d=document.createElement('div');
+    d.className='slot '+(got?'got':'locked');
+    d.innerHTML=got?`<div>${c.g}</div><small>${c[LANG].name}</small>`:`<div>✦</div><small>?</small>`;
+    g.appendChild(d);
+  });
+  document.getElementById('collGot').textContent=S.collected.length;
+  document.getElementById('collBar').style.width=(S.collected.length/DECK.length*100)+'%';
+}
+
+/* ============ weekly summary ============ */
+function renderWeek(){
+  const w=document.getElementById('weekWrap');w.innerHTML='';
+  const last7=S.journal.filter(j=>dateDiff(j.date,today)<7);
+  if(last7.length<3) return;
+  const T=I18N[LANG];
+  const moodCount={};
+  last7.forEach(j=>{if(j.mood) moodCount[j.mood]=(moodCount[j.mood]||0)+1;});
+  let topMood='—',max=0;
+  Object.keys(moodCount).forEach(m=>{if(moodCount[m]>max){max=moodCount[m];topMood=m;}});
+  const hits=last7.filter(j=>j.echo==='hit').length;
+  const moodIco={love:'💗',work:'⚡',calm:'🌙',worry:'🌫️',hope:'✨'};
+  const el=document.createElement('div');el.className='week';
+  el.innerHTML=`<h3>✦ ${T.weekTitle} ✦</h3><div class="wsub">${T.weekSub}</div>
+    <div class="wrow">
+      <div><b>${last7.length}</b><span>${T.wDraws}</span></div>
+      <div><b>${moodIco[topMood]||'—'}</b><span>${T.wTopMood}</span></div>
+      <div><b>${hits}</b><span>${T.wHits}</span></div>
+    </div>`;
+  w.appendChild(el);
+}
+
+/* ============ journal ============ */
+function renderJournal(){
+  renderWeek();
+  const l=document.getElementById('journalList'),T=I18N[LANG];
+  if(!S.journal.length){l.innerHTML=`<div class="empty">${T.jrnEmpty}</div>`;return;}
+  const moodIco={love:'💗',work:'⚡',calm:'🌙',worry:'🌫️',hope:'✨'};
+  const hitIco={hit:'🎯',part:'◐',miss:'·',null:'…'};
+  l.innerHTML='';
+  S.journal.forEach(j=>{
+    const c=DECK[j.idx];
+    const row=document.createElement('div');row.className='jrow';
+    const dt=new Date(j.date).toLocaleDateString(LANG==='uk'?'uk-UA':'ru-RU',{day:'numeric',month:'long'});
+    const posMark=j.rev?' ⤵':'';
+    row.innerHTML=`<div class="jg">${c.g}</div>
+      <div class="jm"><b>${c[LANG].name}${posMark}</b>
+      <span>${dt} · ${moodIco[j.mood]||''} · ${hitIco[j.echo]}</span></div>
+      <div class="jhit">${hitIco[j.echo]}</div>`;
+    l.appendChild(row);
+  });
+}
+
+/* ===================================================================
+   PREMIUM AMBIENT SOUND ENGINE — Web Audio, no external files.
+   Designed for a calm, mystical, high-end feel:
+   - low warm drone with slow-moving overtones
+   - a convolution reverb (synthesised impulse) on every cue
+   - soft mallet bells instead of plain sine beeps
+   - gentle "whoosh" with a long fade, no harsh transient
+   =================================================================== */
+let AC=null,master=null,reverb=null,ambientGain=null,soundOn=false,ambientStarted=false;
+
+function buildReverb(seconds,decay){
+  const rate=AC.sampleRate,len=rate*seconds;
+  const imp=AC.createBuffer(2,len,rate);
+  for(let ch=0;ch<2;ch++){
+    const d=imp.getChannelData(ch);
+    for(let i=0;i<len;i++){
+      d[i]=(Math.random()*2-1)*Math.pow(1-i/len,decay);
+    }
+  }
+  const c=AC.createConvolver();c.buffer=imp;return c;
+}
+
+function initAudio(){
+  if(AC) return;
+  AC=new (window.AudioContext||window.webkitAudioContext)();
+  master=AC.createGain();master.gain.value=0.9;master.connect(AC.destination);
+  // shared reverb send — long, soft tail for a cathedral-like space
+  reverb=buildReverb(4.5,2.6);
+  const revGain=AC.createGain();revGain.gain.value=0.55;
+  reverb.connect(revGain);revGain.connect(master);
+  AC._revIn=reverb;
+}
+function unlockAudio(){
+  initAudio();
+  if(AC.state==='suspended') AC.resume();
+  if(!ambientStarted){startAmbient();ambientStarted=true;}
+}
+
+/* warm evolving drone — three layers, very low volume */
+function startAmbient(){
+  ambientGain=AC.createGain();ambientGain.gain.value=0;
+  ambientGain.connect(master);
+  // a soft reverb send for the pad too
+  const padRev=AC.createGain();padRev.gain.value=0.4;
+  ambientGain.connect(padRev);padRev.connect(AC._revIn);
+  // root + fifth + octave, slightly detuned, sine for warmth
+  const freqs=[73.42,110.0,146.83,220.5];
+  freqs.forEach((f,i)=>{
+    const o=AC.createOscillator();o.type='sine';o.frequency.value=f;
+    const g=AC.createGain();g.gain.value=0.07/(i*0.4+1);
+    // slow amplitude shimmer so the pad gently breathes
+    const lfo=AC.createOscillator();lfo.type='sine';
+    lfo.frequency.value=0.05+i*0.017;
+    const lg=AC.createGain();lg.gain.value=0.03;
+    lfo.connect(lg);lg.connect(g.gain);
+    // gentle low-pass keeps it soft, never harsh
+    const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=600;
+    o.connect(lp);lp.connect(g);g.connect(ambientGain);
+    o.start();lfo.start();
+  });
+}
+
+/* soft mallet bell — FM-ish, mellow attack, long reverb tail */
+function bell(freq,t,vol){
+  const o=AC.createOscillator();o.type='sine';o.frequency.value=freq;
+  // a quiet partial an octave up adds shimmer without harshness
+  const o2=AC.createOscillator();o2.type='sine';o2.frequency.value=freq*2.01;
+  const g=AC.createGain();g.gain.value=0;
+  const g2=AC.createGain();g2.gain.value=0;
+  const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=2200;
+  o.connect(g);o2.connect(g2);
+  g.connect(lp);g2.connect(lp);
+  lp.connect(master);
+  const send=AC.createGain();send.gain.value=0.6;
+  lp.connect(send);send.connect(AC._revIn);
+  // mellow attack (not a click), long exponential release
+  g.gain.linearRampToValueAtTime(vol,t+0.04);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+2.8);
+  g2.gain.linearRampToValueAtTime(vol*0.25,t+0.05);
+  g2.gain.exponentialRampToValueAtTime(0.0001,t+1.6);
+  o.start(t);o2.start(t);o.stop(t+3);o2.stop(t+3);
+}
+
+/* card reveal — a calm ascending pentatonic phrase */
+function chime(){
+  if(!AC||!soundOn) return;
+  const scale=[392.0,440.0,523.25,587.33,659.25]; // G A C D E — soft, no tension
+  scale.forEach((f,i)=>bell(f,AC.currentTime+i*0.16,0.13));
+}
+/* small confirmation bell — single warm note */
+function softBell(){
+  if(!AC||!soundOn) return;
+  bell(523.25,AC.currentTime,0.1);
+}
+/* deep resonant "opening" tone under the reveal */
+function deepHit(){
+  if(!AC||!soundOn) return;
+  const o=AC.createOscillator();o.type='sine';o.frequency.value=98;
+  const g=AC.createGain();g.gain.value=0;
+  const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=300;
+  o.connect(lp);lp.connect(master);
+  const send=AC.createGain();send.gain.value=0.5;lp.connect(send);send.connect(AC._revIn);
+  const t=AC.currentTime;
+  g.gain.linearRampToValueAtTime(0.18,t+0.08);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+2.2);
+  o.connect(g);g.connect(master);
+  o.start(t);o.stop(t+2.4);
+}
+/* shuffle — soft filtered noise swell, slow attack & release (no harsh hiss) */
+function whoosh(){
+  if(!AC||!soundOn) return;
+  const dur=1.5;
+  const buf=AC.createBuffer(1,AC.sampleRate*dur,AC.sampleRate);
+  const d=buf.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+  const src=AC.createBufferSource();src.buffer=buf;
+  const bp=AC.createBiquadFilter();bp.type='bandpass';bp.Q.value=0.8;
+  // sweep the filter for a gentle "breath" rather than a "shh"
+  bp.frequency.setValueAtTime(300,AC.currentTime);
+  bp.frequency.linearRampToValueAtTime(900,AC.currentTime+dur*0.5);
+  bp.frequency.linearRampToValueAtTime(280,AC.currentTime+dur);
+  const g=AC.createGain();g.gain.value=0;
+  const t=AC.currentTime;
+  g.gain.linearRampToValueAtTime(0.16,t+0.5);   // slow swell in
+  g.gain.linearRampToValueAtTime(0.0001,t+dur); // slow fade out
+  src.connect(bp);bp.connect(g);g.connect(master);
+  const send=AC.createGain();send.gain.value=0.4;g.connect(send);send.connect(AC._revIn);
+  src.start();
+}
+
+function toggleSound(){
+  unlockAudio();
+  soundOn=!soundOn;
+  if(ambientGain) ambientGain.gain.linearRampToValueAtTime(soundOn?0.6:0,AC.currentTime+1.4);
+  const b=document.getElementById('soundBtn');
+  b.textContent=soundOn?'♪':'♪̸';b.style.color=soundOn?'#eccf94':'#7a6a90';
+  hSelect();
+  if(soundOn) softBell();
+}
+
+/* ============ nav ============ */
+function go(v,btn){
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));
+  document.getElementById('view-'+v).classList.add('on');
+  document.querySelectorAll('.nav-inner button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');hSelect();
+}
+
+/* ============ toast ============ */
+let toastT;
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('on');
+  clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2600);
+}
+
+/* ============ boot ============ */
+function render(){
+  evaluateStreak();
+  document.getElementById('streakNum').textContent=S.streak;
+  document.getElementById('freezeNum').textContent=S.freeze;
+  if(S.drawnDate===today && S.drawnToday!==null){
+    document.getElementById('moodPanel').style.display='none';
+    document.getElementById('halo').classList.add('lit');
+    fillFront(S.drawnToday);
+    flipped=true;
+    document.getElementById('card').classList.add('flipped');
+    showReading();
+  }
+  applyLang();renderAch();maybeAskName();
+}
+function boot(){
+  tgReady();
+  // prefill name from Telegram profile if available
+  const tgUser=TG&&TG.initDataUnsafe&&TG.initDataUnsafe.user;
+  // try to sync from Telegram cloud first, then render
+  loadCloudThen(cloud=>{
+    if(cloud){
+      // cloud wins only if it has more progress than local
+      const localDraws=(S.journal||[]).length;
+      const cloudDraws=(cloud.journal||[]).length;
+      if(cloudDraws>=localDraws) S=Object.assign({},defaultState,cloud);
+    }
+    LANG=S.lang||'uk';
+    if(!S.name && tgUser && tgUser.first_name) S.name=tgUser.first_name;
+    render();
+  });
+}
+boot();
+</script>
+</body>
+</html>
