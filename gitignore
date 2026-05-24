@@ -21,3 +21,8 @@ dist/
 # Env
 .env
 .env.local
+
+# Bot
+bot/users.db
+bot/__pycache__/
+bot/.venv/

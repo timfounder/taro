@@ -22,9 +22,14 @@
 
 ```
 lunaria-tarot/
-├── index.html      — приложение целиком (HTML + CSS + JS в одном файле)
-├── README.md       — этот файл
-├── LICENSE         — лицензия MIT
+├── index.html         — Mini App целиком (HTML + CSS + JS в одном файле)
+├── bot/               — Telegram-бот: точка входа в Mini App
+│   ├── bot.py            (aiogram v3, long polling, SQLite)
+│   ├── requirements.txt
+│   ├── Dockerfile
+│   └── .env.example
+├── README.md
+├── LICENSE
 └── .gitignore
 ```
 
@@ -52,6 +57,49 @@ lunaria-tarot/
 
 После публикации по HTTPS заработают все Telegram-функции: облачное
 сохранение прогресса между устройствами, haptic-отклик, имя из профиля.
+
+## 🤖 Бот-точка входа
+
+В папке `bot/` лежит мини-бэкенд на **aiogram v3**, который отвечает на
+`/start` приветствием и кнопкой запуска Mini App. Язык приветствия
+определяется автоматически из `language_code` пользователя
+(`uk` → українська, иначе — русский) и сохраняется в SQLite — под
+сообщением есть переключатель `Українська / Русский`.
+
+Команды бота:
+
+- `/start` — приветствие + кнопка «Відкрити Lunaria / Открыть Lunaria»
+- `/lang` — сменить язык
+- `/help` — список команд
+
+### Запуск локально
+
+```bash
+cd bot
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env       # подставить BOT_TOKEN и WEBAPP_URL
+export $(grep -v '^#' .env | xargs)
+python bot.py
+```
+
+`WEBAPP_URL` обязательно должен быть HTTPS — иначе Telegram не откроет
+WebApp по кнопке.
+
+### Запуск в Docker
+
+```bash
+cd bot
+docker build -t lunaria-bot .
+docker run -d --name lunaria-bot --restart=always \
+  -e BOT_TOKEN=123456:ABC... \
+  -e WEBAPP_URL=https://your-domain.example/ \
+  -v lunaria-bot-data:/data \
+  lunaria-bot
+```
+
+База `users.db` хранится в volume `/data`, чтобы выбранный язык
+переживал рестарты контейнера.
 
 ## 🛠 Технологии
 
