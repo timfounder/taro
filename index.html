@@ -331,6 +331,152 @@
     padding:11px 22px;border-radius:100px;font-size:12px;letter-spacing:.05em;
     opacity:0;transition:.35s;z-index:30;pointer-events:none;max-width:88%;text-align:center;}
   .toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  /* =========================================================
+     PAIR view — энергетическая совместимость
+     ========================================================= */
+  .pair-form-panel{background:rgba(18,11,31,.74);border:1px solid var(--line);
+    border-radius:20px;padding:22px 20px;backdrop-filter:blur(10px);margin-top:18px;}
+  .pair-group{display:flex;flex-direction:column;gap:10px;}
+  .pair-group-label{font-size:10px;letter-spacing:.32em;text-transform:uppercase;
+    color:var(--gold);text-align:center;margin-bottom:4px;}
+  .pair-input,.pair-dd,.pair-yy,.pair-mm{width:100%;padding:12px 14px;border-radius:12px;
+    border:1px solid var(--line);background:rgba(34,20,47,.7);color:var(--ink);
+    font-family:'Jost',sans-serif;font-size:14px;outline:none;-webkit-appearance:none;appearance:none;
+    -webkit-user-select:text;user-select:text;}
+  .pair-input:focus,.pair-dd:focus,.pair-yy:focus,.pair-mm:focus{border-color:var(--gold);}
+  .pair-input{text-align:center;}
+  .pair-date{display:grid;grid-template-columns:1fr 2fr 1.4fr;gap:8px;}
+  .pair-dd,.pair-yy{text-align:center;}
+  .pair-dd::-webkit-inner-spin-button,.pair-dd::-webkit-outer-spin-button,
+  .pair-yy::-webkit-inner-spin-button,.pair-yy::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
+  .pair-mm{background-image:linear-gradient(45deg,transparent 50%,var(--gold) 50%),
+                          linear-gradient(135deg,var(--gold) 50%,transparent 50%);
+    background-position:calc(100% - 16px) 50%,calc(100% - 11px) 50%;
+    background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:30px;}
+  .pair-divider{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--gold);font-size:14px;justify-content:center;}
+  .pair-divider::before,.pair-divider::after{content:"";flex:1;height:1px;background:var(--line);}
+  .pair-err{color:#e8a4a4;font-size:12px;text-align:center;margin-top:10px;font-style:italic;}
+
+  .pair-list-head{margin:28px 0 12px;font-size:10px;letter-spacing:.28em;
+    text-transform:uppercase;color:var(--mist);text-align:center;}
+  #pairList:empty + br{display:none;}
+  .pair-list-row{display:flex;align-items:center;gap:12px;background:rgba(18,11,31,.66);
+    border:1px solid var(--line);border-radius:15px;padding:12px 14px;margin-bottom:10px;cursor:pointer;
+    transition:.2s;}
+  .pair-list-row:active{transform:scale(.98);}
+  .pair-list-row .plr-ico{font-size:24px;color:var(--gold);width:34px;text-align:center;}
+  .pair-list-row .plr-body{flex:1;min-width:0;}
+  .pair-list-row .plr-body b{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;
+    display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .pair-list-row .plr-body span{font-size:11px;color:var(--mist);letter-spacing:.05em;}
+  .pair-list-row .plr-score{font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--gold-soft);font-weight:600;}
+
+  .ghost-back{width:auto;padding:0 14px;height:34px;border-radius:100px;
+    background:rgba(34,20,47,.7);color:var(--gold);border:1px solid var(--line);
+    font-family:'Jost',sans-serif;font-size:11px;letter-spacing:.12em;cursor:pointer;
+    display:inline-flex;align-items:center;gap:4px;margin-bottom:18px;}
+  .ghost-back:active{transform:scale(.96);}
+
+  .pair-header{text-align:center;margin-bottom:18px;}
+  .pair-tier{font-family:'Cormorant Garamond',serif;font-size:13px;letter-spacing:.42em;
+    text-transform:uppercase;color:var(--gold);font-weight:600;}
+  .pair-harmonic{margin-top:4px;}
+  .pair-harmonic b{font-family:'Cormorant Garamond',serif;font-size:50px;color:var(--gold-soft);
+    font-weight:700;display:block;line-height:1;text-shadow:0 0 24px var(--glow);}
+  .pair-harmonic span{font-size:10px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--mist);display:block;margin-top:4px;}
+
+  .pair-mirror{display:grid;grid-template-columns:1fr auto 1fr;align-items:stretch;gap:8px;
+    margin:8px 0 22px;}
+  .pair-card{background:linear-gradient(165deg,#301d4a,#150c25);
+    border:1px solid var(--line);border-radius:15px;padding:14px 10px 12px;text-align:center;
+    box-shadow:0 16px 36px -14px rgba(0,0,0,.7);
+    display:flex;flex-direction:column;align-items:center;gap:4px;}
+  .pair-card .pc-glyph{font-size:38px;filter:drop-shadow(0 0 14px var(--glow));margin-bottom:2px;
+    animation:floaty 5s ease-in-out infinite;}
+  .pair-card .pc-num{font-family:'Cormorant Garamond',serif;font-size:9px;letter-spacing:.3em;color:var(--gold);}
+  .pair-card .pc-name{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:700;line-height:1.1;}
+  .pair-card .pc-who{font-size:10px;letter-spacing:.06em;color:var(--gold-soft);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;margin-top:2px;}
+  .pair-card .pc-role{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:11.5px;
+    color:var(--mist);line-height:1.35;margin-top:6px;}
+
+  .pair-sigil{position:relative;width:54px;align-self:center;
+    display:flex;align-items:center;justify-content:center;color:var(--gold);}
+  .pair-sigil span{font-size:24px;filter:drop-shadow(0 0 12px var(--glow));z-index:2;}
+  .pair-sigil i{position:absolute;width:44px;height:44px;border:1px solid var(--gold);border-radius:50%;opacity:.45;}
+  .pair-sigil i:nth-child(2){width:34px;height:34px;border-style:dashed;
+    animation:spin 18s linear infinite;}
+  .pair-sigil i:nth-child(3){width:54px;height:54px;
+    animation:spin 30s linear infinite reverse;border-color:rgba(217,169,78,.25);}
+
+  .pair-section-label{margin:24px 0 12px;font-size:9.5px;letter-spacing:.32em;
+    text-transform:uppercase;color:var(--gold);text-align:center;
+    display:flex;align-items:center;gap:10px;}
+  .pair-section-label::before,.pair-section-label::after{
+    content:"";flex:1;height:1px;background:var(--line);}
+
+  .pair-bars{display:flex;flex-direction:column;gap:11px;}
+  .pair-bar{display:grid;grid-template-columns:24px auto 1fr 32px;gap:10px;align-items:center;}
+  .pair-bar .pb-i{font-size:18px;text-align:center;}
+  .pair-bar .pb-l{font-size:11.5px;letter-spacing:.08em;color:var(--ink);}
+  .pair-bar .pb-track{height:6px;background:rgba(217,169,78,.12);border-radius:100px;overflow:hidden;}
+  .pair-bar .pb-fill{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-soft));
+    border-radius:100px;box-shadow:0 0 10px var(--glow);width:0;transition:width 1.1s cubic-bezier(.2,.8,.2,1);}
+  .pair-bar .pb-n{font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:600;
+    color:var(--gold-soft);text-align:right;}
+  .pair-bar .pb-c{grid-column:2/-1;font-size:11.5px;color:var(--mist);font-style:italic;
+    font-family:'Cormorant Garamond',serif;line-height:1.4;margin-top:-2px;}
+
+  .pair-karma-card{background:radial-gradient(ellipse at 50% 0%,rgba(96,55,135,.4),transparent 70%),
+      rgba(18,11,31,.8);border:1px solid var(--gold);border-radius:18px;padding:20px 18px;text-align:center;}
+  .pair-karma-card .pk-icon{font-size:34px;filter:drop-shadow(0 0 14px var(--glow));margin-bottom:6px;}
+  .pair-karma-card .pk-title{font-family:'Cormorant Garamond',serif;font-size:21px;font-weight:700;
+    color:var(--gold-soft);letter-spacing:.04em;}
+  .pair-karma-card .pk-text{font-family:'Cormorant Garamond',serif;font-size:13.5px;line-height:1.55;
+    color:var(--ink);margin-top:8px;}
+
+  .pair-flags{display:flex;flex-direction:column;gap:10px;}
+  .pair-flag{display:flex;gap:10px;align-items:flex-start;
+    background:rgba(34,20,47,.5);border:1px solid var(--line);border-radius:13px;padding:12px 14px;}
+  .pair-flag .pf-i{font-size:14px;color:#e0a86b;line-height:1.6;flex-shrink:0;}
+  .pair-flag .pf-t{font-size:13px;line-height:1.5;color:#ddd0f0;}
+
+  .pair-future{text-align:center;font-family:'Cormorant Garamond',serif;font-style:italic;
+    font-size:17px;line-height:1.5;color:var(--gold-soft);
+    padding:18px 16px;border:1px dashed var(--line);border-radius:16px;}
+  .pair-future::before{content:"« ";color:var(--gold);}
+  .pair-future::after{content:" »";color:var(--gold);}
+
+  .pair-advice{font-family:'Cormorant Garamond',serif;font-size:14px;line-height:1.6;
+    color:var(--ink);padding:4px 4px;}
+
+  .pair-actions{margin-top:24px;display:flex;flex-direction:column;gap:10px;}
+  .pair-actions .btn{margin-top:0;}
+
+  /* pair share card */
+  .pair-sharecard{width:312px;border-radius:22px;padding:28px 24px;text-align:center;
+    background:radial-gradient(ellipse at 50% 0%,rgba(96,55,135,.6),transparent 70%),
+      linear-gradient(165deg,#301d4a,#0c0717);
+    border:1px solid var(--gold);box-shadow:0 0 56px var(--glow);}
+  .pair-sharecard .ps-brand{font-family:'Cormorant Garamond',serif;font-size:10px;letter-spacing:.38em;
+    text-transform:uppercase;color:var(--gold);}
+  .pair-sharecard .ps-tier{font-family:'Cormorant Garamond',serif;font-size:11px;letter-spacing:.36em;
+    text-transform:uppercase;color:var(--gold);margin-top:18px;}
+  .pair-sharecard .ps-harm{font-family:'Cormorant Garamond',serif;font-size:64px;color:var(--gold-soft);
+    font-weight:700;line-height:1;margin:4px 0 10px;text-shadow:0 0 24px var(--glow);}
+  .pair-sharecard .ps-row{display:flex;align-items:center;gap:10px;justify-content:center;margin:14px 0;}
+  .pair-sharecard .ps-row .psg{font-size:38px;filter:drop-shadow(0 0 14px var(--glow));}
+  .pair-sharecard .ps-row .pss{font-size:22px;color:var(--gold);}
+  .pair-sharecard .ps-names{font-family:'Cormorant Garamond',serif;font-size:14px;color:var(--ink);
+    margin-top:6px;}
+  .pair-sharecard .ps-quote{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:14px;
+    color:var(--gold-soft);margin:14px 6px 0;line-height:1.45;}
+  .pair-share-toggle{margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px;
+    font-size:11px;color:var(--mist);}
+  .pair-share-toggle input{accent-color:var(--gold);}
+
 </style>
 </head>
 <body>
@@ -460,6 +606,99 @@
     </div>
     <div class="ach-grid" id="achGrid" style="margin-top:20px;"></div>
   </section>
+
+  <section class="view" id="view-pair">
+    <!-- form: shown when no current reading is open -->
+    <div id="pairForm">
+      <div class="grid-head">
+        <h2 data-t="pairTitle"></h2>
+        <div class="prog" data-t="pairSub"></div>
+      </div>
+      <div class="pair-form-panel">
+        <div class="pair-group">
+          <div class="pair-group-label" data-t="pairYou"></div>
+          <input type="text" class="pair-input" id="pairName1" maxlength="24" autocomplete="off">
+          <div class="pair-date">
+            <input type="number" inputmode="numeric" class="pair-dd" id="pairDay1"   min="1" max="31">
+            <select class="pair-mm" id="pairMon1"></select>
+            <input type="number" inputmode="numeric" class="pair-yy" id="pairYear1" min="1900" max="2099">
+          </div>
+        </div>
+        <div class="pair-divider"><span>✶</span></div>
+        <div class="pair-group">
+          <div class="pair-group-label" data-t="pairPartner"></div>
+          <input type="text" class="pair-input" id="pairName2" maxlength="24" autocomplete="off">
+          <div class="pair-date">
+            <input type="number" inputmode="numeric" class="pair-dd" id="pairDay2"   min="1" max="31">
+            <select class="pair-mm" id="pairMon2"></select>
+            <input type="number" inputmode="numeric" class="pair-yy" id="pairYear2" min="1900" max="2099">
+          </div>
+        </div>
+        <div class="pair-err" id="pairErr" style="display:none;"></div>
+        <button class="btn" id="pairBtn" onclick="readPair()" data-t="pairBtn"></button>
+      </div>
+
+      <div id="pairListWrap">
+        <div class="pair-list-head" data-t="pairListTitle"></div>
+        <div id="pairList"></div>
+      </div>
+    </div>
+
+    <!-- result: shown after the reading is computed -->
+    <div id="pairResult" style="display:none;">
+      <button class="ctl ghost-back" onclick="closePairResult()">← <span data-t="pairBack"></span></button>
+
+      <div class="pair-header">
+        <div class="pair-tier" id="pTier">—</div>
+        <div class="pair-harmonic">
+          <b id="pHarmonic">—</b>
+          <span data-t="pairHarmonic"></span>
+        </div>
+      </div>
+
+      <div class="pair-mirror">
+        <div class="pair-card" id="pCard1">
+          <div class="pc-glyph" id="pGlyph1">✶</div>
+          <div class="pc-num"  id="pNum1">—</div>
+          <div class="pc-name" id="pArc1">—</div>
+          <div class="pc-who"  id="pWho1">—</div>
+          <div class="pc-role" id="pRole1">—</div>
+        </div>
+        <div class="pair-sigil"><span>✶</span><i></i><i></i></div>
+        <div class="pair-card" id="pCard2">
+          <div class="pc-glyph" id="pGlyph2">✶</div>
+          <div class="pc-num"  id="pNum2">—</div>
+          <div class="pc-name" id="pArc2">—</div>
+          <div class="pc-who"  id="pWho2">—</div>
+          <div class="pc-role" id="pRole2">—</div>
+        </div>
+      </div>
+
+      <div class="pair-section-label" data-t="pairElements"></div>
+      <div class="pair-bars" id="pBars"></div>
+
+      <div class="pair-section-label" data-t="pairKarma"></div>
+      <div class="pair-karma-card" id="pKarmaCard">
+        <div class="pk-icon"  id="pKarmaIcon">◐</div>
+        <div class="pk-title" id="pKarmaTitle">—</div>
+        <div class="pk-text"  id="pKarmaText">—</div>
+      </div>
+
+      <div class="pair-section-label" data-t="pairFlags"></div>
+      <div class="pair-flags" id="pFlags"></div>
+
+      <div class="pair-section-label" data-t="pairFuture"></div>
+      <div class="pair-future" id="pFuture">—</div>
+
+      <div class="pair-section-label" data-t="pairAdvice"></div>
+      <div class="pair-advice" id="pAdvice">—</div>
+
+      <div class="pair-actions">
+        <button class="btn ghost" onclick="sharePair()" data-t="pairShare"></button>
+        <button class="btn ghost" onclick="closePairResult()" data-t="pairNew"></button>
+      </div>
+    </div>
+  </section>
 </div>
 
 <div class="overlay" id="nameOverlay">
@@ -492,6 +731,7 @@
 <nav>
   <div class="nav-inner">
     <button class="active" data-v="today" onclick="go('today',this)"><span class="ni">☀</span><span data-t="navToday"></span></button>
+    <button data-v="pair" onclick="go('pair',this)"><span class="ni">∞</span><span data-t="navPair"></span></button>
     <button data-v="collect" onclick="go('collect',this)"><span class="ni">✦</span><span data-t="navColl"></span></button>
     <button data-v="journal" onclick="go('journal',this)"><span class="ni">❧</span><span data-t="navJrn"></span></button>
     <button data-v="ach" onclick="go('ach',this)"><span class="ni">🏆</span><span data-t="navAch"></span></button>
@@ -575,7 +815,22 @@ const I18N={
   weekTitle:'Підсумок тижня',weekSub:'останні 7 днів',
   wDraws:'карт',wTopMood:'настрій',wHits:'влучань',
   shareText:n=>'Моя карта дня — '+n+' ✶ Дізнайся свою у Lunaria',
-  moodName:{love:'кохання',work:'справа',calm:'спокій',worry:'тривога',hope:'надія'}
+  moodName:{love:'кохання',work:'справа',calm:'спокій',worry:'тривога',hope:'надія'},
+  /* — pair view — */
+  navPair:'Зв’язок',
+  pairTitle:'Зв’язок двох людей',
+  pairSub:'Прочитати енергетичну сумісність',
+  pairYou:'ТИ',pairPartner:'ПАРТНЕР',
+  pairBtn:'✶ Розкрити зв’язок',
+  pairBack:'до читань',pairNew:'↻ Нове читання',pairShare:'✶ Поділитися',
+  pairListTitle:'— мої читання —',pairListEmpty:'Зроби перше читання, щоб воно з’явилось тут.',
+  pairHarmonic:'індекс гармонії',
+  pairElements:'сумісність',pairKarma:'кармічний рівень',
+  pairFlags:'що помічати',pairFuture:'що кажуть зорі',pairAdvice:'порада парі',
+  pairErrName:'Введи імена.',pairErrDate:'Перевір дати народження.',
+  pairErrSelf:'Це твоя ж дата — потрібні двоє різних людей.',
+  pairSavedToast:'Читання збережено ✶',
+  pairDelete:'видалити'
  },
  ru:{
   kicker:'Карта Дня',streakLbl:'дней подряд',freezeLbl:'заморозка',
@@ -609,7 +864,22 @@ const I18N={
   weekTitle:'Итог недели',weekSub:'последние 7 дней',
   wDraws:'карт',wTopMood:'настрой',wHits:'попаданий',
   shareText:n=>'Моя карта дня — '+n+' ✶ Узнай свою в Lunaria',
-  moodName:{love:'любовь',work:'дело',calm:'покой',worry:'тревога',hope:'надежда'}
+  moodName:{love:'любовь',work:'дело',calm:'покой',worry:'тревога',hope:'надежда'},
+  /* — pair view — */
+  navPair:'Связь',
+  pairTitle:'Связь двух людей',
+  pairSub:'Прочитать энергетическую совместимость',
+  pairYou:'ТЫ',pairPartner:'ПАРТНЁР',
+  pairBtn:'✶ Раскрыть связь',
+  pairBack:'к чтениям',pairNew:'↻ Новое чтение',pairShare:'✶ Поделиться',
+  pairListTitle:'— мои чтения —',pairListEmpty:'Сделай первое чтение, чтобы оно появилось здесь.',
+  pairHarmonic:'индекс гармонии',
+  pairElements:'совместимость',pairKarma:'кармический уровень',
+  pairFlags:'что замечать',pairFuture:'что говорят звёзды',pairAdvice:'совет на пару',
+  pairErrName:'Введи имена.',pairErrDate:'Проверь даты рождения.',
+  pairErrSelf:'Это твоя же дата — нужны двое разных людей.',
+  pairSavedToast:'Чтение сохранено ✶',
+  pairDelete:'удалить'
  }
 };
 
@@ -818,7 +1088,7 @@ const defaultState={
   name:null,lang:'uk',streak:0,freeze:1,lastDay:null,
   collected:[],echoCount:0,hitCount:0,achievements:[],
   drawnToday:null,reversedToday:false,moodToday:null,echoToday:null,
-  drawnDate:null,journal:[]
+  drawnDate:null,journal:[],pairings:[]
 };
 let S=Object.assign({},defaultState,loadLocal()||{});
 let LANG=S.lang||'uk';
@@ -843,6 +1113,10 @@ function applyLang(){
   }
   document.getElementById('echoLock').textContent=T.echoLock;
   renderCollection();renderJournal();renderAch();
+  // pair view: re-localise month selects + list whenever language flips
+  if(typeof fillMonths==='function') fillMonths();
+  if(typeof renderPairList==='function') renderPairList();
+  if(_currentPair) renderPair(_currentPair.p1,_currentPair.p2,_currentPair.r);
 }
 function toggleLang(){LANG=LANG==='uk'?'ru':'uk';S.lang=LANG;hSelect();saveState();applyLang();}
 
@@ -1343,12 +1617,534 @@ function toggleSound(){
   if(soundOn) softBell();
 }
 
+/* ===================================================================
+   PAIR — энергетическая совместимость двух людей
+   Полностью детерминированный движок: одинаковый ввод → одинаковый
+   результат. Все «случайности» производятся стабильным хэшем имени+ДР.
+   =================================================================== */
+function _pStrHash(s){
+  let h=2166136261>>>0;
+  for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}
+  return h>>>0;
+}
+function _pNorm(s){return (s||'').trim().toLowerCase().replace(/ё/g,'е').replace(/\s+/g,' ');}
+function _pPairKey(p1,p2,spice){
+  // симметричный ключ — порядок партнёров не должен влиять на результат
+  const a=_pNorm(p1.name)+'|'+p1.dob;
+  const b=_pNorm(p2.name)+'|'+p2.dob;
+  const lo=a<b?a:b,hi=a<b?b:a;
+  return _pStrHash(lo+'~'+hi+'~'+spice);
+}
+function _pArcana(p){return _pStrHash(_pNorm(p.name)+'|'+p.dob+'|arcana')%22;}
+function _pLifePath(dob){
+  let n=dob.replace(/-/g,'').split('').map(Number).reduce((a,b)=>a+b,0);
+  while(n>9 && n!==11 && n!==22 && n!==33){
+    n=String(n).split('').map(Number).reduce((a,b)=>a+b,0);
+  }
+  return n;
+}
+// 55..95 — нарочно избегаем краёв 0 и 100: вердиктов «всё или ничего» не делаем
+function _pScore(p1,p2,dim){return 55+(_pPairKey(p1,p2,dim)%41);}
+function _pBucket(s){
+  if(s<=62) return 0;
+  if(s<=72) return 1;
+  if(s<=82) return 2;
+  if(s<=90) return 3;
+  return 4;
+}
+
+function computePair(p1,p2){
+  const scores={
+    heart:_pScore(p1,p2,'heart'),
+    fire :_pScore(p1,p2,'fire'),
+    mind :_pScore(p1,p2,'mind'),
+    karma:_pScore(p1,p2,'karma'),
+    earth:_pScore(p1,p2,'earth')
+  };
+  // взвешенный индекс гармонии: карма и сердце — основной несущий слой
+  const harmonic=Math.round(
+    scores.heart*0.25+scores.fire*0.18+scores.mind*0.18+
+    scores.karma*0.24+scores.earth*0.15
+  );
+  // 4 кармических уровня: 0..3 (попутчики/зеркала/родственные/близнецы пламени)
+  const tierRaw=Math.round(scores.karma*0.7+scores.fire*0.3);
+  let tier;
+  if(tierRaw<=68) tier=0;
+  else if(tierRaw<=78) tier=1;
+  else if(tierRaw<=87) tier=2;
+  else tier=3;
+  // слово гармонии — 5 вариантов (полюса → зеркало)
+  const harmonicWord=_pBucket(harmonic);
+  // 3 уникальных red flag из банка
+  const bank=PAIR.uk.redFlags.length;
+  const seeds=['flag-a','flag-b','flag-c'].map(s=>_pPairKey(p1,p2,s));
+  const flags=[];
+  for(const seed of seeds){
+    let idx=seed%bank;
+    while(flags.includes(idx)) idx=(idx+1)%bank;
+    flags.push(idx);
+  }
+  const future=_pPairKey(p1,p2,'future')%PAIR.uk.futurePhrases.length;
+  return {
+    arcana1:_pArcana(p1),arcana2:_pArcana(p2),
+    lifePath1:_pLifePath(p1.dob),lifePath2:_pLifePath(p2.dob),
+    scores,harmonic,harmonicWord,tier,flags,future
+  };
+}
+
+/* ============ PAIR content — двуязычный контент, ru + uk ============ */
+const PAIR={
+ ru:{
+  months:['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'],
+  harmonicWords:['Полюса','Контраст','Гармония','Резонанс','Зеркало'],
+  elements:[
+   {id:'heart',i:'💗',name:'Сердце',phrases:[
+    'Рядом бывает холодно — чувствам не хватает общего языка.',
+    'Эмоциональный контакт неровный — то щемит, то немеет.',
+    'Сердца слышат друг друга в главном — мелочи иногда сбивают.',
+    'Между вами тёплая эмоциональная тишина — без лишних объяснений.',
+    'Редкое эмоциональное зеркало — узнаёте себя друг в друге.']},
+   {id:'fire',i:'🔥',name:'Огонь',phrases:[
+    'Искр мало — союз держится на другом, не на страсти.',
+    'Огонь то вспыхивает, то стихает — нужен повод.',
+    'Между вами стабильный тёплый жар — без надрыва.',
+    'Энергии — на двоих хватит, и ещё останется.',
+    'Между вами всегда жарко — словно в первые недели.']},
+   {id:'mind',i:'🌬',name:'Разум',phrases:[
+    'Мыслите на разных языках — нужен переводчик.',
+    'Разговоры получаются, когда тема общая, не глубокая.',
+    'Думать вместе получается — ловите друг друга с полуслова.',
+    'Часто на одной волне: слова порой лишние.',
+    'Интеллектуальный резонанс — у вас свой язык на двоих.']},
+   {id:'karma',i:'🌑',name:'Карма',phrases:[
+    'Встретились ради конкретного урока — позже разойдётесь легче, чем кажется.',
+    'Между вами есть нить из прошлого — ещё не до конца распутана.',
+    'Встреча не случайна — вы узнали друг друга с первой минуты.',
+    'Глубокая кармическая связь — делает большего из обоих.',
+    'Эта связь старше вас обоих — отказаться от неё почти невозможно.']},
+   {id:'earth',i:'🌿',name:'Земля',phrases:[
+    'Быт между вами — главная слабая точка.',
+    'Повседневное сложнее, чем праздник; уживаться нужно учиться.',
+    'В будни держитесь ровно — рутина не съедает.',
+    'Общий дом даётся обоим легко: ритмы совпадают.',
+    'У вас редкое бытовое согласие — как у давно сложенной пары.']}
+  ],
+  karmaTiers:[
+   {icon:'☘',title:'Попутчики',text:'Встреча на короткой дистанции — ради конкретного урока друг для друга. Связь может быть тёплой, но не подразумевает «навсегда».'},
+   {icon:'◐',title:'Зеркала',text:'Отражаете друг в друге то, чего сами не видите. Этот союз учит, и учёба будет иногда неудобной — в этом его смысл.'},
+   {icon:'✶',title:'Родственные души',text:'Глубокая узнаваемость с первой встречи — будто знаете друг друга давно. Союз сильный и спокойный, ему не нужно много доказывать.'},
+   {icon:'🔥',title:'Близнецы пламени',text:'Редчайший резонанс — и одновременно самый требовательный. Эта связь либо станет вашим главным маршрутом, либо разнесёт вас на полпути. Третьего нет.'}
+  ],
+  arcanaRoles:[
+   'приносит лёгкость и готовность начинать заново, когда другие застревают.',
+   'приносит инициативу и волю воплощать задуманное в дело.',
+   'приносит интуицию и понимание без слов, когда другой ещё ищет формулировку.',
+   'приносит тепло и заботу, делает связь питательной для обоих.',
+   'приносит опору и структуру, рядом с ним(ней) спокойно принимать решения.',
+   'приносит традицию и совет, умеет смотреть на отношения «вдолгую».',
+   'приносит способность по-настоящему выбирать — без полумер.',
+   'приносит напор и движение вперёд, тянет пару в действие.',
+   'приносит мягкую стойкость — рядом с ним(ней) сложное переживается без надрыва.',
+   'приносит глубину и тишину, в которой пара слышит саму себя.',
+   'приносит непредсказуемость и удачу, превращает рутину в живой поток.',
+   'приносит честность — без него(неё) связь не выдержит правды о себе.',
+   'приносит замедление и новый угол, спасает пару от поспешных решений.',
+   'приносит способность отпускать отжившее, чтобы росло новое.',
+   'приносит баланс — умеет дозировать близость и пространство.',
+   'приносит страсть и тень — рядом близость глубокая, но требует осознанности.',
+   'приносит правду без анестезии — рядом фальшь не выживает.',
+   'приносит надежду и веру в добрый исход, держит пару в свете.',
+   'приносит чувствительность к подводным течениям — замечает то, что другой пропустит.',
+   'приносит радость и простоту, делает быт легче.',
+   'приносит честный взгляд на «как мы на самом деле живём».',
+   'приносит ощущение цельности — союз с ним(ней) ощущается как завершение круга.'
+  ],
+  redFlags:[
+   'Когда ты ускоряешь — {p2} замедляется, и это раздражает обоих.',
+   'Деньги — ваша слепая зона: разные представления о «достаточно».',
+   'Тишину {p2} читает как уход — даже когда ты просто устал(а).',
+   'Ты любишь словами, {p2} — делами: легко пропустить заботу друг друга.',
+   'Споры о мелочах в быту съедают энергию, которую могли бы вложить в большее.',
+   'Разные ритмы сна и отдыха — постепенный источник напряжения.',
+   'Один(на) из вас слишком много берёт на себя — другой(ая) этого не замечает.',
+   'Старые обиды всплывают в новых ссорах — нужен разбор, а не латание.',
+   'Когда плохо одному — второй пытается решить, а нужно — просто быть рядом.',
+   'Шутки одного могут ранить другого — границы юмора у вас разные.',
+   'Бытовая аккуратность — точка напряжения: один требовательнее.',
+   'Близость требует усилий обоих — без инициативы с двух сторон угасает быстро.',
+   'Ты говоришь «всё нормально», когда болит — {p2} верит, и это копится.',
+   'Семья каждого тянет в свою сторону — общие границы важно установить заранее.',
+   'Ваши способы любить разные: один тактильный, другой — через дела.',
+   'Один(на) из вас выгорает молча — второй(ая) узнаёт об этом последним(ей).',
+   'В кризисе один уходит в себя, другой — в действие. Договоритесь о паузе.',
+   'Финансовая прозрачность сейчас важнее, чем кажется.',
+   'Прошлые отношения одного из вас ещё не до конца отпущены — это видно.',
+   'Общие планы и быт — тема, которой вы избегаете, а зря.',
+   'Соцсети могут стать триггером — обсудите границы заранее.',
+   'Сравнение с другими парами — ваш скрытый яд.',
+   'Тишина после ссоры у вас длится дольше, чем стоит.',
+   'Уважение проявляется в мелочах — у вас тут разные пороги чувствительности.'
+  ],
+  futurePhrases:[
+   'Ваша связь устоит, если научитесь не путать тишину с холодом.',
+   'В долгую ваша связь расцветёт, если оставите место для разности друг друга.',
+   'Если по сути, ваш союз окрепнет тогда, когда научитесь говорить о боли вслух.',
+   'Глубинно ваша связь сохранит свет, если будете возвращаться к нежности после ссор.',
+   'Звёзды говорят: эта связь не разрушит вас, если не превратите быт в поле боя.',
+   'По правде, ваша связь выстоит в шторм, если перестанете требовать друг от друга того, что другой пока не может дать.',
+   'Ваш союз станет домом, если научитесь принимать молчание как присутствие, а не как отсутствие.',
+   'В будущем у вас есть всё, чтобы быть командой — если оба перестанете молча копить.',
+   'Эта связь — длинная дорога. Идти её легче вдвоём, если оба согласны не торопить.',
+   'Если оба согласитесь расти, а не оставаться правыми, эта связь переживёт всё, что обычно ломает пары.',
+   'Ваш союз глубже, чем кажется на первый взгляд — и расцветёт он от честности, а не от усилий быть удобными.',
+   'Эта связь обещает многое — но не подарит ничего, пока вы оба не выберете её сознательно.'
+  ],
+  coupleAdvice:[
+   'Дайте этому союзу быть тем, что он есть — короткой и тёплой дистанцией. Не превращайте «достаточно» в «навсегда» силой воли — этим вы только обесцените то хорошее, что между вами уже есть.',
+   'Каждое раздражение друг в друге — подсказка о том, что в себе ещё не интегрировано. Берегите эту пару от уплощения: ваша близость живёт там, где вы не отворачиваетесь от неудобной правды.',
+   'Не торопите эту связь и не давите на неё — ей не нужно доказательств. Берегите её ритуалами: маленькие повторяющиеся жесты делают её прочной без слов.',
+   'Этой связи нельзя жить «между прочим» — она требует, чтобы вы оба сделали её главным выбором. Если выбираете — выбирайте целиком, осознанно, и поддерживайте друг друга в росте. Если не выбираете — отпускайте честно.'
+  ]
+ },
+ uk:{
+  months:['Січень','Лютий','Березень','Квітень','Травень','Червень','Липень','Серпень','Вересень','Жовтень','Листопад','Грудень'],
+  harmonicWords:['Полюси','Контраст','Гармонія','Резонанс','Дзеркало'],
+  elements:[
+   {id:'heart',i:'💗',name:'Серце',phrases:[
+    'Поруч буває холодно — почуттям бракує спільної мови.',
+    'Емоційний контакт нерівний — то щемить, то німіє.',
+    'Серця чують одне одного в головному — дрібниці інколи збивають.',
+    'Між вами тепла емоційна тиша — без зайвих пояснень.',
+    'Рідкісне емоційне дзеркало — впізнаєте себе одне в одному.']},
+   {id:'fire',i:'🔥',name:'Вогонь',phrases:[
+    'Іскор мало — союз тримається на іншому, не на пристрасті.',
+    'Вогонь то спалахує, то стихає — потрібен привід.',
+    'Між вами стабільний теплий жар — без надриву.',
+    'Енергії — на двох вистачить і ще залишиться.',
+    'Між вами завжди жарко — мов у перші тижні.']},
+   {id:'mind',i:'🌬',name:'Розум',phrases:[
+    'Мислите різними мовами — потрібен перекладач.',
+    'Розмови виходять, коли тема загальна, не глибока.',
+    'Думати разом виходить — ловите одне одного з пів-слова.',
+    'Часто на одній хвилі: слова часом зайві.',
+    'Інтелектуальний резонанс — у вас власна мова на двох.']},
+   {id:'karma',i:'🌑',name:'Карма',phrases:[
+    'Зустрілися заради конкретного уроку — згодом розійдетесь легше, ніж здається.',
+    'Між вами є нитка з минулого — ще не до кінця розплутана.',
+    'Зустріч не випадкова — ви впізнали одне одного від першої миті.',
+    'Глибокий кармічний зв’язок — робить більшого з обох.',
+    'Цей зв’язок старший за вас обох — відмовитись від нього майже неможливо.']},
+   {id:'earth',i:'🌿',name:'Земля',phrases:[
+    'Побут між вами — головна слабка точка.',
+    'Щоденне складніше за свято; уживатись треба вчитися.',
+    'У будні тримаєтеся рівно — рутина не з’їдає.',
+    'Спільна оселя дається обом легко: ритми збігаються.',
+    'У вас рідкісна побутова згода — як у давно складеної пари.']}
+  ],
+  karmaTiers:[
+   {icon:'☘',title:'Попутники',text:'Зустріч на короткій дистанції — заради конкретного уроку одне для одного. Зв’язок може бути теплим, але не передбачає «назавжди».'},
+   {icon:'◐',title:'Дзеркала',text:'Відображаєте одне в одному те, чого самі не бачите. Цей союз вчить, і навчання буде інколи незручним — у цьому його сенс.'},
+   {icon:'✶',title:'Споріднені душі',text:'Глибока впізнаваність із першої зустрічі — наче знаєте одне одного давно. Союз сильний і спокійний, йому не потрібно багато доводити.'},
+   {icon:'🔥',title:'Близнюки полум’я',text:'Рідкісний резонанс — і водночас найвимогливіший. Цей зв’язок або стане вашим головним маршрутом, або рознесе вас на півдорозі. Третього немає.'}
+  ],
+  arcanaRoles:[
+   'приносить легкість і готовність починати заново, коли інші застрягають.',
+   'приносить ініціативу й волю втілювати задумане у справу.',
+   'приносить інтуїцію і розуміння без слів, коли інший ще шукає формулювання.',
+   'приносить тепло і турботу, робить зв’язок поживним для обох.',
+   'приносить опору і структуру, поруч із ним(нею) спокійно ухвалювати рішення.',
+   'приносить традицію і пораду, вміє дивитись на стосунки «вдовгу».',
+   'приносить здатність по-справжньому обирати — без напівзаходів.',
+   'приносить напір і рух уперед, тягне пару в дію.',
+   'приносить м’яку стійкість — поруч важке переживається без надриву.',
+   'приносить глибину і тишу, в якій пара чує саму себе.',
+   'приносить непередбачуваність і удачу, перетворює рутину на живий потік.',
+   'приносить чесність — без неї зв’язок не витримає правди про себе.',
+   'приносить уповільнення і новий кут, рятує пару від поспішних рішень.',
+   'приносить здатність відпускати віджиле, щоб росло нове.',
+   'приносить баланс — вміє дозувати близькість і простір.',
+   'приносить пристрасть і тінь — поруч близькість глибока, але вимагає усвідомленості.',
+   'приносить правду без анестезії — поруч фальш не виживає.',
+   'приносить надію і віру в добрий результат, тримає пару у світлі.',
+   'приносить чутливість до підводних течій — помічає те, що інший пропустить.',
+   'приносить радість і простоту, робить побут легшим.',
+   'приносить чесний погляд на «як ми насправді живемо».',
+   'приносить відчуття цілісності — союз із ним(нею) відчувається як завершення кола.'
+  ],
+  redFlags:[
+   'Коли ти прискорюєш — {p2} уповільнюється, і це дратує обох.',
+   'Гроші — ваша сліпа зона: різні уявлення про «достатньо».',
+   'Тишу {p2} читає як відсторонення — навіть коли ти просто втомився(лась).',
+   'Ти любиш словами, {p2} — справами: легко пропустити турботу одне одного.',
+   'Суперечки про дрібниці в побуті з’їдають енергію, яку могли б вкласти у більше.',
+   'Різні ритми сну й відпочинку — поступове джерело напруги.',
+   'Один(на) із вас занадто багато бере на себе — інший(а) цього не помічає.',
+   'Старі образи спливають у нових сварках — потрібен розбір, а не латання.',
+   'Коли погано одному — інший намагається вирішити, а треба — просто бути поруч.',
+   'Жарти одного можуть поранити іншого — межі гумору у вас різні.',
+   'Побутова охайність — точка напруги: один(на) вимогливіший(а).',
+   'Близькість потребує зусиль обох — без ініціативи з двох сторін згасає швидко.',
+   'Ти кажеш «все нормально», коли болить — {p2} вірить, і це накопичується.',
+   'Родина кожного тягне у свій бік — спільні межі важливо встановити заздалегідь.',
+   'Ваші способи любити різні: один тактильний, інший — через справи.',
+   'Один(на) із вас вигорає мовчки — інший(а) дізнається про це останнім(ою).',
+   'У кризі один іде в себе, інший — у дію. Домовтеся про паузу.',
+   'Фінансова прозорість зараз важливіша, ніж здається.',
+   'Минулі стосунки одного з вас ще не до кінця відпущені — це видно.',
+   'Спільні плани й побут — тема, якої ви уникаєте, а дарма.',
+   'Соцмережі можуть стати тригером — обговоріть межі заздалегідь.',
+   'Порівняння з іншими парами — ваша прихована отрута.',
+   'Тиша після сварки у вас триває довше, ніж варто.',
+   'Повага виявляється в дрібницях — у вас тут різні пороги чутливості.'
+  ],
+  futurePhrases:[
+   'Ваш зв’язок устоїть, якщо навчитеся не плутати тишу з холодом.',
+   'У довгу ваш зв’язок розквітне, якщо залишите місце для різності одне одного.',
+   'Якщо по суті, ваш союз зміцніє тоді, коли навчитеся говорити про біль уголос.',
+   'Глибинно ваш зв’язок збереже світло, якщо будете повертатись до ніжності після сварок.',
+   'Зорі кажуть: цей зв’язок не зруйнує вас, якщо не перетворите побут на поле бою.',
+   'По правді, ваш зв’язок витримає шторм, якщо перестанете вимагати одне від одного того, що інший поки не може дати.',
+   'Ваш союз стане домом, якщо навчитеся приймати мовчання як присутність, а не як відсутність.',
+   'У майбутньому у вас є все, щоб бути командою — якщо обидва перестанете мовчки накопичувати.',
+   'Цей зв’язок — довга дорога. Іти нею легше вдвох, якщо обидва згодні не квапити.',
+   'Якщо обидва погодитесь рости, а не залишатись правими, цей зв’язок переживе все, що зазвичай ламає пари.',
+   'Ваш союз глибший, ніж здається на перший погляд — і розквітне він від чесності, а не від зусиль бути зручними.',
+   'Цей зв’язок обіцяє багато — але не подарує нічого, доки ви обидва не оберете його свідомо.'
+  ],
+  coupleAdvice:[
+   'Дайте цьому союзу бути тим, чим він є — короткою і теплою дистанцією. Не перетворюйте «достатньо» на «назавжди» силою волі — цим ви лише знеціните те хороше, що між вами вже є.',
+   'Кожне роздратування одне в одному — підказка про те, що в собі ще не інтегровано. Бережіть цю пару від спрощення: ваша близькість живе там, де ви не відвертаєтесь від незручної правди.',
+   'Не квапте цей зв’язок і не тисніть на нього — йому не потрібні докази. Бережіть його ритуалами: маленькі повторювані жести роблять його міцним без слів.',
+   'Цьому зв’язку не можна жити «між іншим» — він вимагає, щоб ви обидва зробили його головним вибором. Якщо обираєте — обирайте повністю, свідомо, і підтримуйте одне одного в зростанні. Якщо не обираєте — відпускайте чесно.'
+  ]
+ }
+};
+
+/* ============ pair UI: form, list, result, share ============ */
+let _currentPair=null;
+
+function fillMonths(){
+  const months=PAIR[LANG].months;
+  ['pairMon1','pairMon2'].forEach(id=>{
+    const sel=document.getElementById(id);
+    const prev=sel.value;
+    sel.innerHTML='';
+    months.forEach((m,i)=>{
+      const o=document.createElement('option');o.value=i+1;o.textContent=m;
+      sel.appendChild(o);
+    });
+    if(prev) sel.value=prev;
+  });
+  // language-aware placeholders for the bare day / year inputs and name fields
+  const dayPh='дд';
+  const yearPh=LANG==='uk'?'рррр':'гггг';
+  const namePh=LANG==='uk'?'Ім’я':'Имя';
+  ['pairDay1','pairDay2'].forEach(id=>{document.getElementById(id).placeholder=dayPh;});
+  ['pairYear1','pairYear2'].forEach(id=>{document.getElementById(id).placeholder=yearPh;});
+  ['pairName1','pairName2'].forEach(id=>{document.getElementById(id).placeholder=namePh;});
+}
+
+function _validDob(d,m,y){
+  const dd=+d,mm=+m,yy=+y;
+  if(!dd||!mm||!yy) return false;
+  if(yy<1900||yy>2099) return false;
+  const dt=new Date(yy,mm-1,dd);
+  return dt.getFullYear()===yy && dt.getMonth()===mm-1 && dt.getDate()===dd && dt<=new Date();
+}
+function _pad(n,w){n=String(n);while(n.length<w) n='0'+n;return n;}
+
+function readPair(){
+  const errEl=document.getElementById('pairErr');errEl.style.display='none';
+  const T=I18N[LANG];
+  const n1=document.getElementById('pairName1').value.trim();
+  const n2=document.getElementById('pairName2').value.trim();
+  if(!n1||!n2){errEl.textContent=T.pairErrName;errEl.style.display='block';hNotify('error');return;}
+  const d1=document.getElementById('pairDay1').value;
+  const m1=document.getElementById('pairMon1').value;
+  const y1=document.getElementById('pairYear1').value;
+  const d2=document.getElementById('pairDay2').value;
+  const m2=document.getElementById('pairMon2').value;
+  const y2=document.getElementById('pairYear2').value;
+  if(!_validDob(d1,m1,y1)||!_validDob(d2,m2,y2)){
+    errEl.textContent=T.pairErrDate;errEl.style.display='block';hNotify('error');return;
+  }
+  const dob1=_pad(y1,4)+'-'+_pad(m1,2)+'-'+_pad(d1,2);
+  const dob2=_pad(y2,4)+'-'+_pad(m2,2)+'-'+_pad(d2,2);
+  if(_pNorm(n1)===_pNorm(n2) && dob1===dob2){
+    errEl.textContent=T.pairErrSelf;errEl.style.display='block';hNotify('error');return;
+  }
+  const p1={name:n1,dob:dob1};
+  const p2={name:n2,dob:dob2};
+  const r=computePair(p1,p2);
+  // save (dedupe: replace existing reading for the same pair)
+  S.pairings=S.pairings||[];
+  const sig=[_pNorm(n1)+'|'+dob1,_pNorm(n2)+'|'+dob2].sort().join('~');
+  S.pairings=S.pairings.filter(x=>x.sig!==sig);
+  S.pairings.unshift({id:'p'+Date.now(),sig,p1,p2,r,createdAt:new Date().toISOString()});
+  if(S.pairings.length>10) S.pairings.length=10;
+  saveState();
+  hImpact('medium');softBell();
+  openPairResult(p1,p2,r);
+  toast(T.pairSavedToast);
+}
+
+function openPairResult(p1,p2,r){
+  _currentPair={p1,p2,r};
+  renderPair(p1,p2,r);
+  document.getElementById('pairForm').style.display='none';
+  document.getElementById('pairResult').style.display='block';
+  // scroll the app to the result
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function closePairResult(){
+  _currentPair=null;
+  document.getElementById('pairForm').style.display='block';
+  document.getElementById('pairResult').style.display='none';
+  renderPairList();
+  hSelect();
+}
+
+function renderPair(p1,p2,r){
+  const L=PAIR[LANG];
+  document.getElementById('pTier').textContent=L.harmonicWords[r.harmonicWord];
+  document.getElementById('pHarmonic').textContent=r.harmonic;
+  // arcana cards
+  [[1,r.arcana1,p1],[2,r.arcana2,p2]].forEach(([n,arc,p])=>{
+    const c=DECK[arc],cL=c[LANG];
+    document.getElementById('pGlyph'+n).textContent=c.g;
+    document.getElementById('pNum'+n).textContent='Аркан '+c.n;
+    document.getElementById('pArc'+n).textContent=cL.name;
+    document.getElementById('pWho'+n).textContent=p.name;
+    document.getElementById('pRole'+n).textContent=L.arcanaRoles[arc];
+  });
+  // 5 bars
+  const barsHost=document.getElementById('pBars');barsHost.innerHTML='';
+  L.elements.forEach(el=>{
+    const sc=r.scores[el.id],bk=_pBucket(sc);
+    const row=document.createElement('div');row.className='pair-bar';
+    row.innerHTML='<div class="pb-i">'+el.i+'</div>'+
+      '<div class="pb-l">'+el.name+'</div>'+
+      '<div class="pb-track"><i class="pb-fill" style="width:0%"></i></div>'+
+      '<div class="pb-n">'+sc+'</div>'+
+      '<div class="pb-c">'+el.phrases[bk]+'</div>';
+    barsHost.appendChild(row);
+    // animate fill on next tick so the transition kicks in
+    requestAnimationFrame(()=>{row.querySelector('.pb-fill').style.width=sc+'%';});
+  });
+  // karma tier
+  const t=L.karmaTiers[r.tier];
+  document.getElementById('pKarmaIcon').textContent=t.icon;
+  document.getElementById('pKarmaTitle').textContent=t.title;
+  document.getElementById('pKarmaText').textContent=t.text;
+  // flags
+  const flagsHost=document.getElementById('pFlags');flagsHost.innerHTML='';
+  r.flags.forEach(idx=>{
+    const text=L.redFlags[idx].replace(/\{p1\}/g,p1.name).replace(/\{p2\}/g,p2.name);
+    const el=document.createElement('div');el.className='pair-flag';
+    el.innerHTML='<div class="pf-i">⚠</div><div class="pf-t">'+text+'</div>';
+    flagsHost.appendChild(el);
+  });
+  document.getElementById('pFuture').textContent=L.futurePhrases[r.future];
+  document.getElementById('pAdvice').textContent=L.coupleAdvice[r.tier];
+}
+
+function renderPairList(){
+  const host=document.getElementById('pairList');
+  const T=I18N[LANG],L=PAIR[LANG];
+  host.innerHTML='';
+  const list=S.pairings||[];
+  if(!list.length){
+    host.innerHTML='<div class="empty">'+T.pairListEmpty+'</div>';return;
+  }
+  const loc=LANG==='uk'?'uk-UA':'ru-RU';
+  list.forEach(p=>{
+    const dt=new Date(p.createdAt).toLocaleDateString(loc,{day:'numeric',month:'long'});
+    const tier=L.karmaTiers[p.r.tier];
+    const row=document.createElement('div');row.className='pair-list-row';
+    row.innerHTML='<div class="plr-ico">'+tier.icon+'</div>'+
+      '<div class="plr-body"><b>'+p.p1.name+' & '+p.p2.name+'</b>'+
+      '<span>'+dt+' · '+tier.title+'</span></div>'+
+      '<div class="plr-score">'+p.r.harmonic+'</div>';
+    row.onclick=()=>{openPairResult(p.p1,p.p2,p.r);hImpact('light');};
+    host.appendChild(row);
+  });
+}
+
+function sharePair(){
+  if(!_currentPair) return;
+  const {p1,p2,r}=_currentPair;
+  const L=PAIR[LANG],T=I18N[LANG];
+  const c1=DECK[r.arcana1],c2=DECK[r.arcana2];
+  const tier=L.karmaTiers[r.tier];
+  const future=L.futurePhrases[r.future];
+  const W=720,H=1100;
+  const cv=document.createElement('canvas');cv.width=W;cv.height=H;
+  const x=cv.getContext('2d');
+  const bg=x.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,'#301d4a');bg.addColorStop(1,'#0c0717');
+  x.fillStyle=bg;x.fillRect(0,0,W,H);
+  const rg=x.createRadialGradient(W/2,0,0,W/2,0,W);
+  rg.addColorStop(0,'rgba(96,55,135,.6)');rg.addColorStop(1,'rgba(96,55,135,0)');
+  x.fillStyle=rg;x.fillRect(0,0,W,H);
+  x.strokeStyle='#d9a94e';x.lineWidth=3;x.strokeRect(28,28,W-56,H-56);
+  x.textAlign='center';
+  x.fillStyle='#d9a94e';x.font='26px Cormorant Garamond, serif';
+  x.fillText('LUNARIA · '+T.navPair.toUpperCase(),W/2,120);
+  // tier label
+  x.fillStyle='#d9a94e';x.font='22px Jost, sans-serif';
+  x.fillText(tier.title.toUpperCase(),W/2,200);
+  // harmonic
+  x.fillStyle='#eccf94';x.font='bold 130px Cormorant Garamond, serif';
+  x.fillText(String(r.harmonic),W/2,360);
+  x.fillStyle='#b7a4d6';x.font='18px Jost, sans-serif';
+  x.fillText(T.pairHarmonic.toUpperCase(),W/2,400);
+  // two glyphs + sigil
+  x.font='130px serif';x.fillStyle='#eccf94';
+  x.fillText(c1.g,W/2-160,580);
+  x.fillText(c2.g,W/2+160,580);
+  x.fillStyle='#d9a94e';x.font='44px serif';
+  x.fillText('✶',W/2,580);
+  // arcana names
+  x.fillStyle='#f4eeff';x.font='28px Cormorant Garamond, serif';
+  x.fillText(c1[LANG].name,W/2-160,640);
+  x.fillText(c2[LANG].name,W/2+160,640);
+  // separator
+  x.strokeStyle='rgba(217,169,78,.3)';x.lineWidth=1;
+  x.beginPath();x.moveTo(140,720);x.lineTo(W-140,720);x.stroke();
+  // future phrase — wrap to ~30 chars
+  x.fillStyle='#eccf94';x.font='italic 28px Cormorant Garamond, serif';
+  const words=future.split(' ');let line='',y=790;
+  words.forEach(w=>{
+    const test=line?line+' '+w:w;
+    if(x.measureText(test).width>W-160){x.fillText(line,W/2,y);y+=42;line=w;}
+    else line=test;
+  });
+  if(line) x.fillText(line,W/2,y);
+  // date
+  const dt=new Date().toLocaleDateString(LANG==='uk'?'uk-UA':'ru-RU',{day:'numeric',month:'long'});
+  x.fillStyle='#b7a4d6';x.font='20px Jost, sans-serif';
+  x.fillText(dt.toUpperCase(),W/2,H-80);
+  // download
+  const a=document.createElement('a');
+  a.download='lunaria-pair-'+today+'.png';a.href=cv.toDataURL('image/png');a.click();
+  hImpact('light');toast(T.savedToast);
+}
+
+/* hook the form inputs into "tap = unlock haptic" without losing focus */
+['pairName1','pairName2','pairDay1','pairDay2','pairYear1','pairYear2'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el) el.addEventListener('focus',()=>hSelect());
+});
+
 /* ============ nav ============ */
 function go(v,btn){
   document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));
   document.getElementById('view-'+v).classList.add('on');
   document.querySelectorAll('.nav-inner button').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');hSelect();
+  // first time we land on pair view, make sure the list & month selects are populated
+  if(v==='pair'){fillMonths();renderPairList();}
 }
 
 /* ============ toast ============ */
