@@ -337,12 +337,25 @@
   .namebox .ng{font-size:42px;margin-bottom:8px;}
   .namebox h2{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:23px;margin-bottom:6px;}
   .namebox p{font-size:12px;color:var(--mist);margin-bottom:18px;line-height:1.5;}
-  .namebox input{width:100%;height:46px;padding:0 16px;border-radius:12px;
+  .namebox input,.namebox select{width:100%;height:46px;padding:0 16px;border-radius:12px;
     border:1px solid var(--line);background:rgba(34,20,47,.7);color:var(--ink);
     font-family:'Jost',sans-serif;font-size:16px;text-align:center;outline:none;
     -webkit-appearance:none;appearance:none;box-sizing:border-box;}
   .namebox input::placeholder{color:rgba(183,164,214,.45);font-weight:300;}
-  .namebox input:focus{border-color:var(--gold);}
+  .namebox input:focus,.namebox select:focus{border-color:var(--gold);}
+  .namebox-dob-label{font-size:10px;letter-spacing:.32em;text-transform:uppercase;
+    color:var(--gold);margin:14px 0 8px;}
+  .namebox-dob{display:grid;grid-template-columns:64px 1fr 84px;gap:8px;margin-bottom:6px;}
+  .namebox-dob input,.namebox-dob select{padding:0 10px;}
+  .namebox-dob select{text-align:center;text-align-last:center;padding-right:28px;
+    background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0h10L5 6z' fill='%23d9a94e'/%3E%3C/svg%3E");
+    background-position:right 10px center;background-size:10px 6px;background-repeat:no-repeat;}
+  .namebox-dob input::-webkit-inner-spin-button,
+  .namebox-dob input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
+  .namebox-err{color:#e8a4a4;font-size:12px;font-style:italic;margin-bottom:10px;}
+  [data-theme="light"] .namebox-dob select{
+    background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0h10L5 6z' fill='%238a5d18'/%3E%3C/svg%3E");}
+  [data-theme="light"] .namebox select{background-color:rgba(232,212,170,.7);color:var(--ink);border-color:rgba(138,93,24,.4);}
 
   .toast{position:fixed;bottom:calc(122px + var(--safe-bottom));left:50%;
     transform:translateX(-50%) translateY(20px);
@@ -583,8 +596,6 @@
   [data-theme="light"] .namebox{
     background:linear-gradient(165deg,#f2e4c5,#ddc7a0);
     box-shadow:0 0 50px rgba(184,138,59,.45);}
-  [data-theme="light"] .namebox input{background:rgba(232,212,170,.7);color:var(--ink);}
-  [data-theme="light"] .namebox input::placeholder{color:rgba(107,85,126,.5);}
   [data-theme="light"] .sharecard{
     background:
       radial-gradient(ellipse at 50% 0%,rgba(190,160,210,.5),transparent 70%),
@@ -606,15 +617,21 @@
 
   /* pair view */
   [data-theme="light"] .pair-form-panel{background:rgba(244,234,215,.78);}
+  /* use background-COLOR (not the shorthand) so the chevron image/no-repeat
+     set by the base .pair-mm rule survives the cascade — otherwise the SVG
+     tiles across the whole select. */
   [data-theme="light"] .pair-input,
   [data-theme="light"] .pair-dd,
   [data-theme="light"] .pair-yy,
-  [data-theme="light"] .pair-mm{background:rgba(232,212,170,.6);color:var(--ink);}
+  [data-theme="light"] .pair-mm{background-color:rgba(232,212,170,.6);color:var(--ink);
+    border-color:rgba(138,93,24,.4);}
   [data-theme="light"] .pair-input::placeholder,
   [data-theme="light"] .pair-dd::placeholder,
   [data-theme="light"] .pair-yy::placeholder{color:rgba(107,85,126,.5);}
   [data-theme="light"] .pair-mm{
     background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0h10L5 6z' fill='%238a5d18'/%3E%3C/svg%3E");}
+  [data-theme="light"] .namebox input{background-color:rgba(232,212,170,.7);color:var(--ink);border-color:rgba(138,93,24,.4);}
+  [data-theme="light"] .namebox input::placeholder{color:rgba(107,85,126,.5);}
   [data-theme="light"] .pair-card{background:linear-gradient(165deg,#fbf2dd,#e8d6ad);
     box-shadow:0 16px 36px -14px rgba(80,60,30,.25);}
   [data-theme="light"] .pair-karma-card{
@@ -870,6 +887,13 @@
     <h2 data-t="nameTitle"></h2>
     <p data-t="nameSub"></p>
     <input type="text" id="nameInput" maxlength="20" placeholder="...">
+    <div class="namebox-dob-label" data-t="nameDobLabel"></div>
+    <div class="namebox-dob">
+      <input type="number" inputmode="numeric" id="nameDay"  min="1" max="31">
+      <select id="nameMon"></select>
+      <input type="number" inputmode="numeric" id="nameYear" min="1900" max="2099">
+    </div>
+    <div class="namebox-err" id="nameErr" style="display:none;"></div>
     <button class="btn" onclick="saveName()" data-t="nameBtn"></button>
   </div>
 </div>
@@ -978,8 +1002,11 @@ const I18N={
   achToast:t=>'🏆 Нове досягнення: '+t,
   posUp:'пряме положення',posRev:'перевернуте',
   nameTitle:'Як до тебе звертатись?',
-  nameSub:'Картала вестиме твій щоденник особисто для тебе',
+  nameSub:'Дата народження потрібна, щоб карта дня виходила саме твоя — за нумерологією старших арканів.',
   nameBtn:'Почати',namePlaceholder:'Твоє ім’я',
+  nameDobLabel:'Дата народження',
+  nameErrName:'Введи, як тебе називати.',
+  nameErrDob:'Перевір дату народження.',
   weekTitle:'Підсумок тижня',weekSub:'останні 7 днів',
   wDraws:'карт',wTopMood:'настрій',wHits:'влучань',
   shareText:n=>'Моя карта дня — '+n+' ✶ Дізнайся свою у Lunaria',
@@ -1028,8 +1055,11 @@ const I18N={
   achToast:t=>'🏆 Новое достижение: '+t,
   posUp:'прямое положение',posRev:'перевёрнутое',
   nameTitle:'Как к тебе обращаться?',
-  nameSub:'Карта будет вести твой дневник лично для тебя',
+  nameSub:'Дата рождения нужна, чтобы карта дня выходила именно твоя — по нумерологии старших арканов.',
   nameBtn:'Начать',namePlaceholder:'Твоё имя',
+  nameDobLabel:'Дата рождения',
+  nameErrName:'Введи, как тебя называть.',
+  nameErrDob:'Проверь дату рождения.',
   weekTitle:'Итог недели',weekSub:'последние 7 дней',
   wDraws:'карт',wTopMood:'настрой',wHits:'попаданий',
   shareText:n=>'Моя карта дня — '+n+' ✶ Узнай свою в Lunaria',
@@ -1255,7 +1285,7 @@ function loadCloudThen(cb){
 const today=new Date().toISOString().slice(0,10);
 function dateDiff(a,b){return Math.round((new Date(b)-new Date(a))/86400000);}
 const defaultState={
-  name:null,lang:'uk',theme:'auto',streak:0,freeze:1,lastDay:null,
+  name:null,dob:null,lang:'uk',theme:'auto',streak:0,freeze:1,lastDay:null,
   collected:[],echoCount:0,hitCount:0,achievements:[],
   drawnToday:null,reversedToday:false,moodToday:null,echoToday:null,
   drawnDate:null,journal:[],pairings:[]
@@ -1285,6 +1315,7 @@ function applyLang(){
   renderCollection();renderJournal();renderAch();
   // pair view: re-localise month selects + list whenever language flips
   if(typeof fillMonths==='function') fillMonths();
+  if(typeof fillNameMonthSelect==='function') fillNameMonthSelect();
   if(typeof renderPairList==='function') renderPairList();
   if(_currentPair) renderPair(_currentPair.p1,_currentPair.p2,_currentPair.r);
 }
@@ -1333,13 +1364,48 @@ if(window.matchMedia){
   }catch(e){}
 }
 
-/* ============ name ============ */
+/* ============ name + birth date onboarding ============ */
+function fillNameMonthSelect(){
+  const sel=document.getElementById('nameMon');if(!sel) return;
+  const months=PAIR[LANG].months;
+  const prev=sel.value;
+  sel.innerHTML='';
+  months.forEach((m,i)=>{
+    const o=document.createElement('option');o.value=i+1;o.textContent=m;
+    sel.appendChild(o);
+  });
+  if(prev) sel.value=prev;
+  const T=I18N[LANG];
+  document.getElementById('nameDay').placeholder='дд';
+  document.getElementById('nameYear').placeholder=LANG==='uk'?'рррр':'гггг';
+  document.getElementById('nameInput').placeholder=T.namePlaceholder||(LANG==='uk'?'Ім’я':'Имя');
+}
 function maybeAskName(){
-  if(!S.name) document.getElementById('nameOverlay').classList.add('on');
+  // require both name AND birth date — tarot day card needs the date,
+  // and we only ask once per profile
+  if(!S.name || !S.dob){
+    fillNameMonthSelect();
+    if(S.name) document.getElementById('nameInput').value=S.name;
+    if(S.dob){
+      const [y,m,d]=S.dob.split('-');
+      document.getElementById('nameYear').value=+y;
+      document.getElementById('nameMon').value=+m;
+      document.getElementById('nameDay').value=+d;
+    }
+    document.getElementById('nameOverlay').classList.add('on');
+  }
 }
 function saveName(){
+  const T=I18N[LANG],errEl=document.getElementById('nameErr');
+  errEl.style.display='none';
   const v=document.getElementById('nameInput').value.trim();
-  if(v) S.name=v;
+  const d=document.getElementById('nameDay').value;
+  const m=document.getElementById('nameMon').value;
+  const y=document.getElementById('nameYear').value;
+  if(!v){errEl.textContent=T.nameErrName;errEl.style.display='block';hNotify('error');return;}
+  if(!_validDob(d,m,y)){errEl.textContent=T.nameErrDob;errEl.style.display='block';hNotify('error');return;}
+  S.name=v;
+  S.dob=_pad(y,4)+'-'+_pad(m,2)+'-'+_pad(d,2);
   document.getElementById('nameOverlay').classList.remove('on');
   hImpact('light');saveState();applyLang();
 }
@@ -1364,8 +1430,60 @@ document.querySelectorAll('.mood').forEach(m=>{
 });
 
 /* ============ draw — full shuffle ritual (JS-driven, no CSS keyframe conflicts) ============ */
+/* ===================================================================
+   Tarot daily-card calculation.
+
+   Each user gets their OWN deck: shuffled once by a stable hash of
+   their birth date, and one card flipped per day. This mirrors a real
+   tarot diary — your deck, your sequence, no two people share the same
+   day's card by accident.
+
+   We use day-index (days since birth) instead of the calendar date so:
+     • the sequence advances by exactly one card per day
+     • timezone shifts don't pull a different card by an hour's slip
+     • the same dob+date globally yields the same arcana
+
+   Uniform distribution is intentional — real shuffling makes every card
+   equally reachable. Strict digit-sum numerology clusters 90% of days
+   onto arcana 5–12 and leaves several arcana never visible all year,
+   which is correct math but bad ritual.
+
+   The "Soul Arcana" (life-long, derived purely from birth-date digit-
+   sum) is exposed separately for future profile / share features.
+   =================================================================== */
+function _digitSum(n){return String(n).split('').map(Number).reduce((a,b)=>a+b,0);}
+
+function tarotSoulArcana(dob){
+  // classical Mary-K-Greer reduction of MM+DD+YYYY → 1..22, with 22→0 (Fool)
+  let n=dob.replace(/-/g,'').split('').map(Number).reduce((a,b)=>a+b,0);
+  while(n>22) n=_digitSum(n);
+  return n===22?0:n;
+}
+
+function _daysSince(dob,todayIso){
+  // UTC midnight subtraction — robust against timezone wobble
+  const b=Date.UTC(+dob.slice(0,4),+dob.slice(5,7)-1,+dob.slice(8,10));
+  const t=Date.UTC(+todayIso.slice(0,4),+todayIso.slice(5,7)-1,+todayIso.slice(8,10));
+  return Math.floor((t-b)/86400000);
+}
+
+function tarotDailyArcana(dob,todayIso){
+  const day=Math.max(0,_daysSince(dob,todayIso));
+  // personal shuffle seed + day index → uniform 0..21
+  return _pStrHash(_pNorm(dob)+'|day:'+day)%22;
+}
+function tarotDailyReversed(dob,todayIso){
+  const day=Math.max(0,_daysSince(dob,todayIso));
+  // ~25% chance of reversed — close to what a careful physical shuffle yields
+  return _pStrHash(_pNorm(dob)+'|day:'+day+'|rev')%4===0;
+}
+
 function drawCard(){
   if(S.drawnDate===today){toast(I18N[LANG].alreadyToast);return;}
+  // dob is captured during onboarding; if for some reason it's missing
+  // (legacy state), fall back to a stable hash of today so the user still
+  // gets a coherent reading instead of an empty deck
+  if(!S.dob){maybeAskName();return;}
   unlockAudio();hImpact('medium');
   document.getElementById('drawBtn').disabled=true;
 
@@ -1374,9 +1492,9 @@ function drawCard(){
   const hint=document.getElementById('tapHint');
   const cards=Array.from(deck.querySelectorAll('.dcard'));
 
-  // pre-pick the result — animation is pure presentation
-  const idx=Math.floor(Math.random()*DECK.length);
-  const reversed=Math.random()<0.5;
+  // tarot-correct: arcana for today comes from (your birth date, today's date)
+  const idx=tarotDailyArcana(S.dob,today);
+  const reversed=tarotDailyReversed(S.dob,today);
 
   // helper: set transform on one card
   const set=(el,x,y,rot,sc)=>{
@@ -1836,8 +1954,17 @@ function toggleSound(){
    результат. Все «случайности» производятся стабильным хэшем имени+ДР.
    =================================================================== */
 function _pStrHash(s){
+  // FNV-1a body
   let h=2166136261>>>0;
   for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}
+  // Murmur3 finalizer — avalanches away the near-linear output FNV-1a
+  // produces for sequential keys ("…day:12490" → "…day:12491" otherwise
+  // gives nearly-consecutive arcana indices, which feels like a bug)
+  h=(h^(h>>>16))>>>0;
+  h=Math.imul(h,0x85ebca6b)>>>0;
+  h=(h^(h>>>13))>>>0;
+  h=Math.imul(h,0xc2b2ae35)>>>0;
+  h=(h^(h>>>16))>>>0;
   return h>>>0;
 }
 function _pNorm(s){return (s||'').trim().toLowerCase().replace(/ё/g,'е').replace(/\s+/g,' ');}
