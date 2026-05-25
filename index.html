@@ -4,6 +4,23 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Картa Дня · Lunaria</title>
+<script>
+/* Pre-paint theme bootstrap. Runs before <style> parses so the right CSS
+   variables are active on the very first frame — avoids any flash of
+   dark theme when the user prefers light (or vice versa). */
+(function(){
+  try{
+    var t='auto';
+    var raw=localStorage.getItem('lunaria_v1');
+    if(raw){var p=JSON.parse(raw);if(p&&p.theme) t=p.theme;}
+    var actual=t;
+    if(t==='auto'){
+      actual=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches)?'light':'dark';
+    }
+    document.documentElement.setAttribute('data-theme',actual);
+  }catch(e){document.documentElement.setAttribute('data-theme','dark');}
+})();
+</script>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -495,6 +512,133 @@
     font-size:11px;color:var(--mist);}
   .pair-share-toggle input{accent-color:var(--gold);}
 
+  /* =========================================================
+     LIGHT theme — «Утренний пергамент / Ранковий пергамент»
+     Keep the same ritual feel, but lit by morning sun:
+     warm cream parchment, deeper readable gold, ink-purple text.
+     ========================================================= */
+  :root[data-theme="light"]{
+    --void:#f4ead7;        /* warm parchment */
+    --deep:#e8d8b3;        /* slightly toasted cream */
+    --plum:#d6c19a;        /* warm tan (was dark purple in night) */
+    --gold:#8a5d18;        /* AAA on cream */
+    --gold-soft:#b08840;
+    --mist:#6b557e;        /* muted purple-grey */
+    --ink:#2a1640;         /* deep purple ink */
+    --line:rgba(138,93,24,.22);
+    --glow:rgba(138,93,24,.28);
+  }
+  /* atmosphere — body radial accents become morning lilac + honey */
+  [data-theme="light"] body{
+    background:
+      radial-gradient(ellipse 75% 55% at 50% -5%,rgba(190,160,210,.45),transparent 70%),
+      radial-gradient(ellipse 60% 45% at 85% 105%,rgba(232,200,144,.55),transparent 70%),
+      var(--void);
+    color:var(--ink);
+  }
+  [data-theme="light"] .fog{background:
+    radial-gradient(circle at 20% 30%,rgba(180,160,200,.16),transparent 45%),
+    radial-gradient(circle at 80% 60%,rgba(220,200,160,.16),transparent 45%);}
+  [data-theme="light"] .star{background:#b08840;}
+  [data-theme="light"] .ember{opacity:.55;}
+
+  /* glass-tinted surfaces */
+  [data-theme="light"] .streak{background:rgba(232,212,170,.55);}
+  [data-theme="light"] .ctl{background:rgba(232,212,170,.7);}
+  [data-theme="light"] .panel{background:rgba(244,234,215,.78);}
+  [data-theme="light"] .mood{background:rgba(232,212,170,.55);}
+  [data-theme="light"] .mood.sel{background:rgba(217,169,78,.2);box-shadow:0 0 18px rgba(217,169,78,.35);}
+  [data-theme="light"] .echo-opts button{background:rgba(232,212,170,.55);color:var(--ink);}
+  [data-theme="light"] nav{background:linear-gradient(transparent,var(--void) 34%);}
+  [data-theme="light"] .nav-inner{background:rgba(244,234,215,.94);}
+  [data-theme="light"] .nav-inner button.active{background:rgba(217,169,78,.18);}
+  [data-theme="light"] .btn{color:#faf0d6;}
+  [data-theme="light"] .btn.ghost{background:rgba(244,234,215,.4);color:var(--gold);}
+  [data-theme="light"] .ghost-back{background:rgba(244,234,215,.6);}
+  [data-theme="light"] .toast{background:rgba(244,234,215,.96);color:var(--gold);}
+
+  /* card surfaces — front, advice back, deck back, dummy shuffle cards */
+  [data-theme="light"] .front{background:linear-gradient(165deg,#fbf2dd,#e8d6ad);
+    box-shadow:0 26px 56px -18px rgba(80,60,30,.28);}
+  [data-theme="light"] .front .frame{
+    background:radial-gradient(ellipse at 50% 25%,rgba(138,93,24,.14),transparent 70%);}
+  [data-theme="light"] .back{
+    background:
+      repeating-linear-gradient(45deg,rgba(138,93,24,.07) 0 10px,transparent 10px 20px),
+      linear-gradient(160deg,var(--plum),var(--deep));
+    box-shadow:0 26px 56px -18px rgba(80,60,30,.28),inset 0 0 60px rgba(80,60,30,.1);}
+  [data-theme="light"] .back[data-content="advice"]{
+    background:
+      radial-gradient(ellipse at 50% -10%,rgba(190,160,210,.3),transparent 65%),
+      linear-gradient(170deg,#f9efd5,#e9d9b4 70%,#d7c294);}
+  [data-theme="light"] .dcard{
+    background:
+      repeating-linear-gradient(45deg,rgba(138,93,24,.07) 0 10px,transparent 10px 20px),
+      linear-gradient(160deg,var(--plum),var(--deep));
+    box-shadow:0 18px 40px -16px rgba(80,60,30,.35),inset 0 0 50px rgba(80,60,30,.12);}
+  [data-theme="light"] .dcard.chosen{
+    box-shadow:0 30px 60px -14px rgba(184,138,59,.5),inset 0 0 50px rgba(80,60,30,.12);}
+
+  /* modals — namebox, sharecard */
+  [data-theme="light"] .namebox{
+    background:linear-gradient(165deg,#f2e4c5,#ddc7a0);
+    box-shadow:0 0 50px rgba(184,138,59,.45);}
+  [data-theme="light"] .namebox input{background:rgba(232,212,170,.7);color:var(--ink);}
+  [data-theme="light"] .namebox input::placeholder{color:rgba(107,85,126,.5);}
+  [data-theme="light"] .sharecard{
+    background:
+      radial-gradient(ellipse at 50% 0%,rgba(190,160,210,.5),transparent 70%),
+      linear-gradient(165deg,#fbf2dd,#e7d3a0);
+    box-shadow:0 0 56px rgba(184,138,59,.45);}
+  [data-theme="light"] .overlay{background:rgba(60,42,18,.5);backdrop-filter:blur(7px);}
+
+  /* collection / journal / achievements */
+  [data-theme="light"] .week{
+    background:
+      radial-gradient(ellipse at 50% 0%,rgba(190,160,210,.4),transparent 70%),
+      rgba(244,234,215,.82);}
+  [data-theme="light"] .ach{background:rgba(244,234,215,.65);}
+  [data-theme="light"] .ach.unlocked{box-shadow:inset 0 0 16px rgba(138,93,24,.13);border-color:rgba(138,93,24,.4);}
+  [data-theme="light"] .jrow{background:rgba(244,234,215,.7);}
+  [data-theme="light"] .slot.locked{background:rgba(232,212,170,.4);color:rgba(107,85,126,.42);}
+  [data-theme="light"] .slot.got{background:linear-gradient(160deg,#fbf2dd,#e8d6ad);
+    box-shadow:inset 0 0 20px rgba(138,93,24,.13);}
+
+  /* pair view */
+  [data-theme="light"] .pair-form-panel{background:rgba(244,234,215,.78);}
+  [data-theme="light"] .pair-input,
+  [data-theme="light"] .pair-dd,
+  [data-theme="light"] .pair-yy,
+  [data-theme="light"] .pair-mm{background:rgba(232,212,170,.6);color:var(--ink);}
+  [data-theme="light"] .pair-input::placeholder,
+  [data-theme="light"] .pair-dd::placeholder,
+  [data-theme="light"] .pair-yy::placeholder{color:rgba(107,85,126,.5);}
+  [data-theme="light"] .pair-mm{
+    background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0h10L5 6z' fill='%238a5d18'/%3E%3C/svg%3E");}
+  [data-theme="light"] .pair-card{background:linear-gradient(165deg,#fbf2dd,#e8d6ad);
+    box-shadow:0 16px 36px -14px rgba(80,60,30,.25);}
+  [data-theme="light"] .pair-karma-card{
+    background:radial-gradient(ellipse at 50% 0%,rgba(190,160,210,.4),transparent 70%),rgba(244,234,215,.85);}
+  [data-theme="light"] .pair-flag{background:rgba(232,212,170,.5);}
+  [data-theme="light"] .pair-flag .pf-i{color:#b06820;}
+  [data-theme="light"] .pair-flag .pf-t{color:var(--ink);}
+  [data-theme="light"] .pair-list-row{background:rgba(244,234,215,.7);}
+  [data-theme="light"] .pair-list-row .plr-body span{color:var(--mist);}
+  [data-theme="light"] .pair-sharecard{
+    background:
+      radial-gradient(ellipse at 50% 0%,rgba(190,160,210,.5),transparent 70%),
+      linear-gradient(165deg,#fbf2dd,#e7d3a0);
+    box-shadow:0 0 56px rgba(184,138,59,.45);}
+  [data-theme="light"] .pair-bar .pb-track{background:rgba(138,93,24,.14);}
+  [data-theme="light"] .seg .sc p{color:var(--ink);}
+  [data-theme="light"] .reading .focus-tag{color:var(--mist);}
+  [data-theme="light"] .empty{color:var(--mist);}
+
+  /* keep the day's card halo bright but not blinding on cream */
+  [data-theme="light"] .halo.lit::before{
+    opacity:.42;
+    background:radial-gradient(circle,rgba(184,138,59,.5),transparent 68%);}
+
 </style>
 </head>
 <body>
@@ -507,6 +651,7 @@
     <div class="brand">Lunaria<span class="moon"></span><span data-t="kicker"></span></div>
     <div class="controls">
       <button class="ctl lang" id="langBtn" onclick="toggleLang()">UA</button>
+      <button class="ctl" id="themeBtn" onclick="cycleTheme()" aria-label="Theme">◐</button>
       <button class="ctl" id="soundBtn" onclick="toggleSound()">♪</button>
     </div>
   </div>
@@ -766,7 +911,12 @@ function tgReady(){
     TG.expand();
     if(TG.disableVerticalSwipes) TG.disableVerticalSwipes();
     // dark theme to match the app
-    try{TG.setHeaderColor('#080510');TG.setBackgroundColor('#080510');}catch(e){}
+    // initial sync — applyTheme() will refine this once S is loaded
+    try{
+      const dark=!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches);
+      const bg=dark?'#080510':'#f4ead7';
+      TG.setHeaderColor(bg);TG.setBackgroundColor(bg);
+    }catch(e){}
     applySafeArea();
     if(TG.onEvent) TG.onEvent('viewportChanged',applySafeArea);
   }catch(e){}
@@ -848,7 +998,8 @@ const I18N={
   pairErrName:'Введи імена.',pairErrDate:'Перевір дати народження.',
   pairErrSelf:'Це твоя ж дата — потрібні двоє різних людей.',
   pairSavedToast:'Читання збережено ✶',
-  pairDelete:'видалити'
+  pairDelete:'видалити',
+  themeToastPrefix:'Тема',themeAuto:'авто',themeLight:'світла',themeDark:'темна'
  },
  ru:{
   kicker:'Карта Дня',streakLbl:'дней подряд',freezeLbl:'заморозка',
@@ -897,7 +1048,8 @@ const I18N={
   pairErrName:'Введи имена.',pairErrDate:'Проверь даты рождения.',
   pairErrSelf:'Это твоя же дата — нужны двое разных людей.',
   pairSavedToast:'Чтение сохранено ✶',
-  pairDelete:'удалить'
+  pairDelete:'удалить',
+  themeToastPrefix:'Тема',themeAuto:'авто',themeLight:'светлая',themeDark:'тёмная'
  }
 };
 
@@ -1103,7 +1255,7 @@ function loadCloudThen(cb){
 const today=new Date().toISOString().slice(0,10);
 function dateDiff(a,b){return Math.round((new Date(b)-new Date(a))/86400000);}
 const defaultState={
-  name:null,lang:'uk',streak:0,freeze:1,lastDay:null,
+  name:null,lang:'uk',theme:'auto',streak:0,freeze:1,lastDay:null,
   collected:[],echoCount:0,hitCount:0,achievements:[],
   drawnToday:null,reversedToday:false,moodToday:null,echoToday:null,
   drawnDate:null,journal:[],pairings:[]
@@ -1137,6 +1289,49 @@ function applyLang(){
   if(_currentPair) renderPair(_currentPair.p1,_currentPair.p2,_currentPair.r);
 }
 function toggleLang(){LANG=LANG==='uk'?'ru':'uk';S.lang=LANG;hSelect();saveState();applyLang();}
+
+/* ============ theme ============ */
+const THEMES=['auto','light','dark'];
+function _resolveTheme(t){
+  if(t!=='auto') return t;
+  return (window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches)?'light':'dark';
+}
+function applyTheme(){
+  const t=S.theme||'auto';
+  const actual=_resolveTheme(t);
+  document.documentElement.setAttribute('data-theme',actual);
+  // sync Telegram chrome so the header/background match the active theme,
+  // otherwise the WebApp shell shows a contrasting bar above our canvas
+  if(TG){
+    try{
+      const bg=actual==='light'?'#f4ead7':'#080510';
+      TG.setHeaderColor(bg);TG.setBackgroundColor(bg);
+    }catch(e){}
+  }
+  // button reflects the *chosen* mode (◐ for auto, ☀ for light, ☾ for dark)
+  const btn=document.getElementById('themeBtn');
+  if(btn){
+    btn.textContent=t==='auto'?'◐':(t==='light'?'☀':'☾');
+    // auto badge: dim the icon a touch so a glance reads "system-driven"
+    btn.style.opacity=t==='auto'?'.8':'1';
+  }
+}
+function cycleTheme(){
+  const i=THEMES.indexOf(S.theme||'auto');
+  S.theme=THEMES[(i+1)%THEMES.length];
+  hSelect();saveState();applyTheme();
+  const T=I18N[LANG],names={auto:T.themeAuto,light:T.themeLight,dark:T.themeDark};
+  toast(T.themeToastPrefix+': '+names[S.theme]);
+}
+// react to OS-level theme flips while running in "auto"
+if(window.matchMedia){
+  try{
+    const mq=window.matchMedia('(prefers-color-scheme: light)');
+    const onChange=()=>{if((S.theme||'auto')==='auto') applyTheme();};
+    if(mq.addEventListener) mq.addEventListener('change',onChange);
+    else if(mq.addListener) mq.addListener(onChange); /* older iOS */
+  }catch(e){}
+}
 
 /* ============ name ============ */
 function maybeAskName(){
@@ -2188,7 +2383,7 @@ function render(){
     document.getElementById('card').dataset.state='arcanum';
     showReading();
   }
-  applyLang();renderAch();maybeAskName();
+  applyTheme();applyLang();renderAch();maybeAskName();
 }
 function boot(){
   tgReady();
