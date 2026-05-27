@@ -254,7 +254,12 @@
 
   nav{position:fixed;bottom:0;left:0;right:0;z-index:6;
     background:linear-gradient(transparent,var(--void) 34%);
-    padding:22px 0 calc(20px + var(--safe-bottom));}
+    padding:22px 0 calc(20px + var(--safe-bottom));
+    transition:opacity .15s ease, transform .2s ease;}
+  /* hide the bottom nav while the soft keyboard is up — on iOS the keyboard
+     does not push position:fixed elements out of the way, so the nav sits
+     on top of the input row the user is typing into */
+  body.kbd-on nav{opacity:0;pointer-events:none;transform:translateY(100%);}
   .nav-inner{max-width:480px;margin:0 auto;display:flex;justify-content:space-around;
     background:rgba(18,11,31,.93);border:1px solid var(--line);border-radius:100px;
     padding:8px;width:calc(100% - 44px);backdrop-filter:blur(12px);}
@@ -664,6 +669,11 @@
     box-shadow:0 16px 36px -14px rgba(80,60,30,.25);}
   [data-theme="light"] .pair-karma-card{
     background:radial-gradient(ellipse at 50% 0%,rgba(190,160,210,.4),transparent 70%),rgba(244,234,215,.85);}
+  [data-theme="light"] .pair-arc-card{
+    background:radial-gradient(ellipse at 50% 0%,rgba(217,169,78,.16),transparent 70%),
+      linear-gradient(165deg,#fbf2dd,#e8d6ad);
+    box-shadow:0 20px 44px -16px rgba(80,60,30,.28),0 0 24px rgba(184,138,59,.25);}
+  [data-theme="light"] .pair-arc-card .pa-text{color:var(--ink);}
   [data-theme="light"] .pair-flag{background:rgba(232,212,170,.5);}
   [data-theme="light"] .pair-flag .pf-i{color:#b06820;}
   [data-theme="light"] .pair-flag .pf-t{color:var(--ink);}
@@ -2607,6 +2617,32 @@ function sharePair(){
   const el=document.getElementById(id);
   if(el) el.addEventListener('focus',()=>hSelect());
 });
+
+/* Toggle body.kbd-on whenever a text/number field or month select is focused
+   anywhere in the document — used by the nav to slide out of the way of the
+   on-screen keyboard. Selects also count because the iOS picker covers the
+   bottom in the same way. */
+(function(){
+  const isFormField=el=>{
+    if(!el) return false;
+    const tag=el.tagName;
+    if(tag==='SELECT'||tag==='TEXTAREA') return true;
+    if(tag==='INPUT'){
+      const t=(el.type||'').toLowerCase();
+      return t==='text'||t==='number'||t==='tel'||t==='search'||t==='email'||t==='url'||t==='';
+    }
+    return false;
+  };
+  document.addEventListener('focusin',e=>{
+    if(isFormField(e.target)) document.body.classList.add('kbd-on');
+  });
+  document.addEventListener('focusout',()=>{
+    // wait one tick so focus moving between two fields doesn't flicker the nav
+    setTimeout(()=>{
+      if(!isFormField(document.activeElement)) document.body.classList.remove('kbd-on');
+    },50);
+  });
+})();
 
 /* ============ nav ============ */
 function go(v,btn){
