@@ -1,9 +1,10 @@
 .git
 .gitignore
-gitignore
 README.md
 LICENSE
 index.html
+assets
+docs
 bot/.env
 bot/.env.local
 bot/users.db

@@ -11,6 +11,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY bot/bot.py ./bot.py
 
-RUN mkdir -p /data
+# Run as an unprivileged user; give it ownership of the data volume.
+RUN useradd --create-home --uid 10001 appuser \
+    && mkdir -p /data \
+    && chown -R appuser:appuser /app /data
+USER appuser
 
 CMD ["python", "bot.py"]

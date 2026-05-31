@@ -11,10 +11,9 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
-import sqlite3
-from contextlib import closing
 from pathlib import Path
 
+import aiosqlite
 from aiogram import Bot, Dispatcher, F, Router
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
@@ -22,11 +21,14 @@ from aiogram.filters import Command, CommandStart
 from aiogram.types import (
     BotCommand,
     CallbackQuery,
+    ErrorEvent,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
     Message,
     WebAppInfo,
 )
+
+logger = logging.getLogger("lunaria")
 
 BOT_TOKEN = os.environ["BOT_TOKEN"]
 WEBAPP_URL = os.environ["WEBAPP_URL"]
@@ -84,40 +86,51 @@ TEXTS: dict[str, dict[str, str]] = {
 }
 
 
-def init_db() -> None:
+# Single shared connection for the whole process. SQLite via aiosqlite runs
+# its work on a background thread, so DB access never blocks the event loop.
+_db: aiosqlite.Connection | None = None
+
+
+def db() -> aiosqlite.Connection:
+    if _db is None:
+        raise RuntimeError("Database is not initialised — call init_db() first")
+    return _db
+
+
+async def init_db() -> None:
+    global _db
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with closing(sqlite3.connect(DB_PATH)) as db:
-        db.execute(
-            "CREATE TABLE IF NOT EXISTS users ("
-            "user_id INTEGER PRIMARY KEY, "
-            "lang TEXT NOT NULL, "
-            "created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, "
-            "updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)"
-        )
-        db.commit()
+    _db = await aiosqlite.connect(DB_PATH)
+    await _db.execute(
+        "CREATE TABLE IF NOT EXISTS users ("
+        "user_id INTEGER PRIMARY KEY, "
+        "lang TEXT NOT NULL, "
+        "created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, "
+        "updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)"
+    )
+    await _db.commit()
 
 
-def get_stored_lang(user_id: int) -> str | None:
-    with closing(sqlite3.connect(DB_PATH)) as db:
-        row = db.execute(
-            "SELECT lang FROM users WHERE user_id=?", (user_id,)
-        ).fetchone()
+async def get_stored_lang(user_id: int) -> str | None:
+    async with db().execute(
+        "SELECT lang FROM users WHERE user_id=?", (user_id,)
+    ) as cur:
+        row = await cur.fetchone()
     return row[0] if row else None
 
 
-def save_lang(user_id: int, lang: str) -> None:
-    with closing(sqlite3.connect(DB_PATH)) as db:
-        db.execute(
-            "INSERT INTO users(user_id, lang) VALUES(?, ?) "
-            "ON CONFLICT(user_id) DO UPDATE SET "
-            "lang=excluded.lang, updated_at=CURRENT_TIMESTAMP",
-            (user_id, lang),
-        )
-        db.commit()
+async def save_lang(user_id: int, lang: str) -> None:
+    await db().execute(
+        "INSERT INTO users(user_id, lang) VALUES(?, ?) "
+        "ON CONFLICT(user_id) DO UPDATE SET "
+        "lang=excluded.lang, updated_at=CURRENT_TIMESTAMP",
+        (user_id, lang),
+    )
+    await db().commit()
 
 
-def resolve_lang(user_id: int, tg_language_code: str | None) -> str:
-    stored = get_stored_lang(user_id)
+async def resolve_lang(user_id: int, tg_language_code: str | None) -> str:
+    stored = await get_stored_lang(user_id)
     if stored in SUPPORTED:
         return stored
     if tg_language_code and tg_language_code.lower().startswith("uk"):
@@ -159,8 +172,9 @@ async def on_start(msg: Message) -> None:
     user = msg.from_user
     if user is None:
         return
-    lang = resolve_lang(user.id, user.language_code)
-    save_lang(user.id, lang)
+    lang = await resolve_lang(user.id, user.language_code)
+    await save_lang(user.id, lang)
+    logger.info("/start from user_id=%s lang=%s", user.id, lang)
     await msg.answer(
         render_greeting(lang, user.first_name),
         reply_markup=build_keyboard(lang),
@@ -172,7 +186,7 @@ async def on_lang(msg: Message) -> None:
     user = msg.from_user
     if user is None:
         return
-    lang = resolve_lang(user.id, user.language_code)
+    lang = await resolve_lang(user.id, user.language_code)
     await msg.answer(
         TEXTS[lang]["lang_prompt"],
         reply_markup=build_keyboard(lang),
@@ -184,7 +198,7 @@ async def on_help(msg: Message) -> None:
     user = msg.from_user
     if user is None:
         return
-    lang = resolve_lang(user.id, user.language_code)
+    lang = await resolve_lang(user.id, user.language_code)
     await msg.answer(TEXTS[lang]["help"])
 
 
@@ -194,13 +208,19 @@ async def on_set_lang(cb: CallbackQuery) -> None:
     if new_lang not in SUPPORTED:
         await cb.answer()
         return
-    save_lang(cb.from_user.id, new_lang)
+    await save_lang(cb.from_user.id, new_lang)
+    logger.info("lang switched to %s for user_id=%s", new_lang, cb.from_user.id)
     if isinstance(cb.message, Message):
         await cb.message.edit_text(
             render_greeting(new_lang, cb.from_user.first_name),
             reply_markup=build_keyboard(new_lang),
         )
     await cb.answer(TEXTS[new_lang]["switched"])
+
+
+@router.error()
+async def on_error(event: ErrorEvent) -> None:
+    logger.error("Unhandled update error: %s", event.exception, exc_info=event.exception)
 
 
 async def set_bot_commands(bot: Bot) -> None:
@@ -218,7 +238,7 @@ async def main() -> None:
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
-    init_db()
+    await init_db()
     bot = Bot(
         token=BOT_TOKEN,
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),
@@ -227,7 +247,11 @@ async def main() -> None:
     dp.include_router(router)
     await set_bot_commands(bot)
     await bot.delete_webhook(drop_pending_updates=True)
-    await dp.start_polling(bot)
+    try:
+        await dp.start_polling(bot)
+    finally:
+        if _db is not None:
+            await _db.close()
 
 
 if __name__ == "__main__":

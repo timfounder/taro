@@ -1137,6 +1137,7 @@ const I18N={
 /* Rider–Waite card art (extracted from Alyona Voitz's «Старші Аркани Таро»),
    keyed by arcana index 0..21 — Fool through World. */
 function cardImg(n){return 'assets/cards/'+String(n).padStart(2,'0')+'.jpg';}
+function escapeHtml(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
 /* ============ deck — 22 Major Arcana ============ */
 /* Each card carries: short kw (legacy, used in share + journal),
@@ -1337,7 +1338,14 @@ function loadCloudThen(cb){
 }
 
 /* ============ state ============ */
-const today=new Date().toISOString().slice(0,10);
+// Local calendar date (YYYY-MM-DD), not UTC — keeps the "card of the day"
+// boundary at the user's local midnight, consistent with the evening-echo
+// logic that reads new Date().getHours().
+function localToday(){
+  const d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+const today=localToday();
 function dateDiff(a,b){return Math.round((new Date(b)-new Date(a))/86400000);}
 const defaultState={
   name:null,dob:null,lang:'uk',theme:'auto',streak:0,freeze:1,lastDay:null,
@@ -2521,7 +2529,7 @@ function renderPair(p1,p2,r){
   // flags
   const flagsHost=document.getElementById('pFlags');flagsHost.innerHTML='';
   r.flags.forEach(idx=>{
-    const text=L.redFlags[idx].replace(/\{p1\}/g,p1.name).replace(/\{p2\}/g,p2.name);
+    const text=L.redFlags[idx].replace(/\{p1\}/g,escapeHtml(p1.name)).replace(/\{p2\}/g,escapeHtml(p2.name));
     const el=document.createElement('div');el.className='pair-flag';
     el.innerHTML='<div class="pf-i">⚠</div><div class="pf-t">'+text+'</div>';
     flagsHost.appendChild(el);
@@ -2544,7 +2552,7 @@ function renderPairList(){
     const tier=L.karmaTiers[p.r.tier];
     const row=document.createElement('div');row.className='pair-list-row';
     row.innerHTML='<div class="plr-ico">'+tier.icon+'</div>'+
-      '<div class="plr-body"><b>'+p.p1.name+' & '+p.p2.name+'</b>'+
+      '<div class="plr-body"><b>'+escapeHtml(p.p1.name)+' & '+escapeHtml(p.p2.name)+'</b>'+
       '<span>'+dt+' · '+tier.title+'</span></div>'+
       '<div class="plr-score">'+p.r.harmonic+'</div>';
     row.onclick=()=>{openPairResult(p.p1,p.p2,p.r);hImpact('light');};

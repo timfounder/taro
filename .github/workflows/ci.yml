@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  bot:
+    name: Bot — syntax & deps
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -r bot/requirements.txt
+      - name: Byte-compile the bot
+        run: python -m py_compile bot/bot.py
+      - name: Import check (no token needed)
+        run: |
+          BOT_TOKEN=dummy:token WEBAPP_URL=https://example.com/ \
+            python -c "import importlib.util, sys; \
+              spec = importlib.util.spec_from_file_location('bot', 'bot/bot.py'); \
+              m = importlib.util.module_from_spec(spec); \
+              spec.loader.exec_module(m); \
+              print('bot module imports OK')"
+
+  webapp:
+    name: Mini App — HTML sanity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse HTML and verify card assets exist
+        run: |
+          python - <<'PY'
+          import sys
+          from html.parser import HTMLParser
+          from pathlib import Path
+
+          html = Path("index.html").read_text(encoding="utf-8")
+          # html.parser is lenient; this mainly catches a truncated/corrupt file.
+          HTMLParser().feed(html)
+
+          missing = [
+              f"assets/cards/{n:02d}.jpg"
+              for n in range(22)
+              if not Path(f"assets/cards/{n:02d}.jpg").exists()
+          ]
+          if missing:
+              sys.exit("Missing card assets: " + ", ".join(missing))
+          print("index.html parsed; all 22 card assets present")
+          PY
