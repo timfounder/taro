@@ -18,6 +18,7 @@ from pathlib import Path
 from aiogram import Bot, Dispatcher, F, Router
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
+from aiogram.exceptions import TelegramAPIError
 from aiogram.filters import Command, CommandStart
 from aiogram.types import (
     BotCommand,
@@ -31,6 +32,17 @@ from aiogram.types import (
 BOT_TOKEN = os.environ["BOT_TOKEN"]
 WEBAPP_URL = os.environ["WEBAPP_URL"]
 DB_PATH = Path(os.environ.get("DB_PATH", "users.db"))
+
+# Канал обязательной подписки. Если пусто — гейт выключен и приложение
+# открывается без проверки. Формат: @username (публичный канал) или
+# числовой ID вида -100123456789. Для числового ID задай CHANNEL_URL.
+REQUIRED_CHANNEL = os.environ.get("REQUIRED_CHANNEL", "").strip()
+# Явная ссылка на канал (нужна для приватных каналов / числовых ID).
+# Для @username вычисляется автоматически.
+CHANNEL_URL = os.environ.get("CHANNEL_URL", "").strip()
+
+# Статусы участника, которые считаем активной подпиской.
+SUBSCRIBED_STATUSES = frozenset({"member", "administrator", "creator"})
 
 SUPPORTED = ("uk", "ru")
 
@@ -57,6 +69,17 @@ TEXTS: dict[str, dict[str, str]] = {
             "/lang — змінити мову\n"
             "/help — ця підказка"
         ),
+        "gate_body": (
+            "<b>Lunaria — Карта Дня</b>\n\n"
+            "Щоб відкрити застосунок, спершу підпишись на наш канал — "
+            "там анонси, ритуали та сенси дня. 🌙\n\n"
+            "1️⃣ Натисни «Підписатися»\n"
+            "2️⃣ Повернись і натисни «Я підписався»"
+        ),
+        "subscribe": "📢 Підписатися на канал",
+        "check": "✓ Я підписався",
+        "not_subscribed": "Підписку не знайдено. Підпишись на канал і спробуй ще раз.",
+        "subscribed_ok": "Дякую! Доступ відкрито ✶",
     },
     "ru": {
         "salute_named": "Здравствуй, {name}. 🌙",
@@ -80,6 +103,17 @@ TEXTS: dict[str, dict[str, str]] = {
             "/lang — сменить язык\n"
             "/help — эта подсказка"
         ),
+        "gate_body": (
+            "<b>Lunaria — Карта Дня</b>\n\n"
+            "Чтобы открыть приложение, сначала подпишись на наш канал — "
+            "там анонсы, ритуалы и смыслы дня. 🌙\n\n"
+            "1️⃣ Нажми «Подписаться»\n"
+            "2️⃣ Вернись и нажми «Я подписался»"
+        ),
+        "subscribe": "📢 Подписаться на канал",
+        "check": "✓ Я подписался",
+        "not_subscribed": "Подписка не найдена. Подпишись на канал и попробуй ещё раз.",
+        "subscribed_ok": "Спасибо! Доступ открыт ✶",
     },
 }
 
@@ -125,6 +159,53 @@ def resolve_lang(user_id: int, tg_language_code: str | None) -> str:
     return "ru"
 
 
+def channel_url() -> str:
+    """Ссылка на канал для кнопки «Подписаться»."""
+    if CHANNEL_URL:
+        return CHANNEL_URL
+    handle = REQUIRED_CHANNEL.lstrip("@")
+    return f"https://t.me/{handle}"
+
+
+async def is_subscribed(bot: Bot, user_id: int) -> bool:
+    """Проверяет подписку пользователя на REQUIRED_CHANNEL.
+
+    Если гейт выключен (канал не задан) — всегда True. При ошибке запроса
+    (например, бот не админ канала) считаем подписку отсутствующей и пишем
+    предупреждение в лог — подписка обязательна, поэтому fail-closed.
+    """
+    if not REQUIRED_CHANNEL:
+        return True
+    try:
+        member = await bot.get_chat_member(REQUIRED_CHANNEL, user_id)
+    except TelegramAPIError as err:
+        logging.warning(
+            "Не удалось проверить подписку на %s для %s: %s. "
+            "Убедись, что бот добавлен администратором канала.",
+            REQUIRED_CHANNEL,
+            user_id,
+            err,
+        )
+        return False
+    return member.status in SUBSCRIBED_STATUSES
+
+
+def build_gate_keyboard(lang: str) -> InlineKeyboardMarkup:
+    other = "ru" if lang == "uk" else "uk"
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text=TEXTS[lang]["subscribe"], url=channel_url())],
+            [InlineKeyboardButton(text=TEXTS[lang]["check"], callback_data="checksub")],
+            [
+                InlineKeyboardButton(
+                    text=TEXTS[lang]["switch"],
+                    callback_data=f"setlang:{other}",
+                )
+            ],
+        ]
+    )
+
+
 def build_keyboard(lang: str) -> InlineKeyboardMarkup:
     other = "ru" if lang == "uk" else "uk"
     return InlineKeyboardMarkup(
@@ -151,6 +232,15 @@ def render_greeting(lang: str, name: str | None) -> str:
     return f"{salute}\n\n{t['body']}"
 
 
+async def render_entry(
+    bot: Bot, user_id: int, lang: str, name: str | None
+) -> tuple[str, InlineKeyboardMarkup]:
+    """Экран входа: приветствие с кнопкой запуска, если подписан, иначе гейт."""
+    if await is_subscribed(bot, user_id):
+        return render_greeting(lang, name), build_keyboard(lang)
+    return TEXTS[lang]["gate_body"], build_gate_keyboard(lang)
+
+
 router = Router(name="lunaria")
 
 
@@ -161,10 +251,10 @@ async def on_start(msg: Message) -> None:
         return
     lang = resolve_lang(user.id, user.language_code)
     save_lang(user.id, lang)
-    await msg.answer(
-        render_greeting(lang, user.first_name),
-        reply_markup=build_keyboard(lang),
+    text, keyboard = await render_entry(
+        msg.bot, user.id, lang, user.first_name
     )
+    await msg.answer(text, reply_markup=keyboard)
 
 
 @router.message(Command("lang"))
@@ -173,10 +263,16 @@ async def on_lang(msg: Message) -> None:
     if user is None:
         return
     lang = resolve_lang(user.id, user.language_code)
-    await msg.answer(
-        TEXTS[lang]["lang_prompt"],
-        reply_markup=build_keyboard(lang),
-    )
+    if await is_subscribed(msg.bot, user.id):
+        await msg.answer(
+            TEXTS[lang]["lang_prompt"],
+            reply_markup=build_keyboard(lang),
+        )
+    else:
+        await msg.answer(
+            TEXTS[lang]["gate_body"],
+            reply_markup=build_gate_keyboard(lang),
+        )
 
 
 @router.message(Command("help"))
@@ -196,11 +292,25 @@ async def on_set_lang(cb: CallbackQuery) -> None:
         return
     save_lang(cb.from_user.id, new_lang)
     if isinstance(cb.message, Message):
-        await cb.message.edit_text(
-            render_greeting(new_lang, cb.from_user.first_name),
-            reply_markup=build_keyboard(new_lang),
+        text, keyboard = await render_entry(
+            cb.bot, cb.from_user.id, new_lang, cb.from_user.first_name
         )
+        await cb.message.edit_text(text, reply_markup=keyboard)
     await cb.answer(TEXTS[new_lang]["switched"])
+
+
+@router.callback_query(F.data == "checksub")
+async def on_check_sub(cb: CallbackQuery) -> None:
+    lang = resolve_lang(cb.from_user.id, cb.from_user.language_code)
+    if not await is_subscribed(cb.bot, cb.from_user.id):
+        await cb.answer(TEXTS[lang]["not_subscribed"], show_alert=True)
+        return
+    if isinstance(cb.message, Message):
+        await cb.message.edit_text(
+            render_greeting(lang, cb.from_user.first_name),
+            reply_markup=build_keyboard(lang),
+        )
+    await cb.answer(TEXTS[lang]["subscribed_ok"])
 
 
 async def set_bot_commands(bot: Bot) -> None:
