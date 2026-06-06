@@ -159,10 +159,28 @@ def resolve_lang(user_id: int, tg_language_code: str | None) -> str:
     return "ru"
 
 
+def channel_chat_id() -> str:
+    """Идентификатор канала для getChatMember.
+
+    Принимает @username, числовой ID (-100…) или ссылку t.me/<username> —
+    из ссылки извлекается @username. Инвайт-ссылки (t.me/+…) для проверки
+    членства не годятся: для приватного канала задавай числовой ID.
+    """
+    raw = REQUIRED_CHANNEL
+    if raw.startswith("http://") or raw.startswith("https://"):
+        handle = raw.rstrip("/").rsplit("/", 1)[-1]
+        return handle if handle.startswith(("@", "+", "-")) else f"@{handle}"
+    if raw and not raw.startswith(("@", "-", "+")):
+        return f"@{raw}"
+    return raw
+
+
 def channel_url() -> str:
     """Ссылка на канал для кнопки «Подписаться»."""
     if CHANNEL_URL:
         return CHANNEL_URL
+    if REQUIRED_CHANNEL.startswith(("http://", "https://")):
+        return REQUIRED_CHANNEL
     handle = REQUIRED_CHANNEL.lstrip("@")
     return f"https://t.me/{handle}"
 
@@ -177,7 +195,7 @@ async def is_subscribed(bot: Bot, user_id: int) -> bool:
     if not REQUIRED_CHANNEL:
         return True
     try:
-        member = await bot.get_chat_member(REQUIRED_CHANNEL, user_id)
+        member = await bot.get_chat_member(channel_chat_id(), user_id)
     except TelegramAPIError as err:
         logging.warning(
             "Не удалось проверить подписку на %s для %s: %s. "
