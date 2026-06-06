@@ -358,6 +358,17 @@
   .namebox-dob input::-webkit-inner-spin-button,
   .namebox-dob input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
   .namebox-err{color:#e8a4a4;font-size:12px;font-style:italic;margin-bottom:10px;}
+  .remind-row{display:flex;align-items:center;justify-content:space-between;gap:12px;
+    margin:6px 0 12px;font-size:14px;color:var(--ink);}
+  .remind-row span{flex:1;text-align:left;}
+  .remind-row input[type=checkbox]{width:46px;height:26px;flex:none;cursor:pointer;
+    -webkit-appearance:none;appearance:none;border-radius:13px;border:1px solid var(--line);
+    background:rgba(34,20,47,.7);position:relative;transition:background .2s,border-color .2s;}
+  .remind-row input[type=checkbox]:checked{background:var(--gold);border-color:var(--gold);}
+  .remind-row input[type=checkbox]::after{content:'';position:absolute;top:2px;left:2px;
+    width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s;}
+  .remind-row input[type=checkbox]:checked::after{left:22px;}
+  .remind-row input[type=time]{width:auto;flex:none;height:40px;}
   [data-theme="light"] .namebox-dob select{
     background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0h10L5 6z' fill='%238a5d18'/%3E%3C/svg%3E");}
   [data-theme="light"] .namebox select{background-color:rgba(232,212,170,.7);color:var(--ink);border-color:rgba(138,93,24,.4);}
@@ -707,6 +718,7 @@
     <div class="controls">
       <button class="ctl lang" id="langBtn" onclick="toggleLang()">UA</button>
       <button class="ctl" id="themeBtn" onclick="cycleTheme()" aria-label="Theme">◐</button>
+      <button class="ctl" id="remindBtn" onclick="openRemind()" aria-label="Reminder">🔔</button>
       <button class="ctl" id="soundBtn" onclick="toggleSound()">♪</button>
     </div>
   </div>
@@ -928,6 +940,36 @@
   </section>
 </div>
 
+<div class="overlay" id="gateOverlay">
+  <div class="namebox">
+    <div class="ng">🌙</div>
+    <h2 data-t="gateTitle"></h2>
+    <p data-t="gateText"></p>
+    <div class="namebox-err" id="gateErr" style="display:none;"></div>
+    <button class="btn" id="gateSubBtn" onclick="gateSubscribe()" data-t="gateSubBtn"></button>
+    <button class="btn ghost" id="gateCheckBtn" onclick="gateRecheck()" data-t="gateCheckBtn"></button>
+  </div>
+</div>
+
+<div class="overlay" id="remindOverlay">
+  <div class="namebox">
+    <div class="ng">🔔</div>
+    <h2 data-t="remindTitle"></h2>
+    <p data-t="remindSub"></p>
+    <label class="remind-row">
+      <span data-t="remindEnable"></span>
+      <input type="checkbox" id="remindEnable">
+    </label>
+    <div class="remind-row" id="remindTimeRow">
+      <span data-t="remindTimeLabel"></span>
+      <input type="time" id="remindTime" value="09:00">
+    </div>
+    <div class="namebox-err" id="remindErr" style="display:none;"></div>
+    <button class="btn" onclick="saveRemind()" data-t="remindSave"></button>
+    <button class="btn ghost" onclick="closeRemind()" data-t="closeBtn"></button>
+  </div>
+</div>
+
 <div class="overlay" id="nameOverlay">
   <div class="namebox">
     <div class="ng">🌙</div>
@@ -975,6 +1017,27 @@
 <script>
 /* ============ Telegram Mini App init ============ */
 const TG=window.Telegram&&window.Telegram.WebApp?window.Telegram.WebApp:null;
+
+/* Базовый URL HTTP-API бота (проверка подписки + напоминания).
+   Укажи публичный адрес сервиса на Railway, например:
+   const API_BASE='https://taro-production.up.railway.app';
+   Пусто → проверка подписки и напоминания тихо отключены
+   (приложение работает как раньше). */
+const API_BASE='';
+
+/* POST в API бота с подписанным initData. Возвращает распарсенный JSON
+   либо null, если API не настроен / недоступен / не в Telegram. */
+async function apiPost(path,payload){
+  if(!API_BASE||!TG||!TG.initData) return null;
+  try{
+    const r=await fetch(API_BASE.replace(/\/$/,'')+path,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(Object.assign({initData:TG.initData},payload||{}))
+    });
+    if(!r.ok && r.status!==401 && r.status!==400) return null;
+    return await r.json();
+  }catch(e){return null;}
+}
 function tgReady(){
   if(!TG) return;
   try{
@@ -1075,7 +1138,24 @@ const I18N={
   pairErrSelf:'Це твоя ж дата — потрібні двоє різних людей.',
   pairSavedToast:'Читання збережено ✶',
   pairDelete:'видалити',
-  themeToastPrefix:'Тема',themeAuto:'авто',themeLight:'світла',themeDark:'темна'
+  themeToastPrefix:'Тема',themeAuto:'авто',themeLight:'світла',themeDark:'темна',
+  /* — гейт підписки — */
+  gateTitle:'Спершу підпишись',
+  gateText:'Щоб користуватись Lunaria, підпишись на наш канал — там анонси, ритуали та сенси дня. 🌙',
+  gateSubBtn:'📢 Підписатися',
+  gateCheckBtn:'✓ Я підписався',
+  gateChecking:'Перевіряю…',
+  gateStillNo:'Підписку не знайдено. Підпишись і спробуй ще раз.',
+  /* — нагадування — */
+  remindTitle:'Нагадування',
+  remindSub:'Щодня нагадаємо витягнути карту',
+  remindEnable:'Увімкнути нагадування',
+  remindTimeLabel:'Час',
+  remindSave:'Зберегти',
+  remindOnToast:t=>'Нагадування увімкнено на '+t+' 🔔',
+  remindOffToast:'Нагадування вимкнено',
+  remindErr:'Не вдалося зберегти. Спробуй ще раз.',
+  remindUnavail:'Нагадування доступні лише всередині Telegram.'
  },
  ru:{
   kicker:'Карта Дня',streakLbl:'дней подряд',freezeLbl:'заморозка',
@@ -1130,7 +1210,24 @@ const I18N={
   pairErrSelf:'Это твоя же дата — нужны двое разных людей.',
   pairSavedToast:'Чтение сохранено ✶',
   pairDelete:'удалить',
-  themeToastPrefix:'Тема',themeAuto:'авто',themeLight:'светлая',themeDark:'тёмная'
+  themeToastPrefix:'Тема',themeAuto:'авто',themeLight:'светлая',themeDark:'тёмная',
+  /* — гейт подписки — */
+  gateTitle:'Сначала подпишись',
+  gateText:'Чтобы пользоваться Lunaria, подпишись на наш канал — там анонсы, ритуалы и смыслы дня. 🌙',
+  gateSubBtn:'📢 Подписаться',
+  gateCheckBtn:'✓ Я подписался',
+  gateChecking:'Проверяю…',
+  gateStillNo:'Подписка не найдена. Подпишись и попробуй ещё раз.',
+  /* — напоминания — */
+  remindTitle:'Напоминания',
+  remindSub:'Каждый день напомним вытянуть карту',
+  remindEnable:'Включить напоминание',
+  remindTimeLabel:'Время',
+  remindSave:'Сохранить',
+  remindOnToast:t=>'Напоминание включено на '+t+' 🔔',
+  remindOffToast:'Напоминание выключено',
+  remindErr:'Не удалось сохранить. Попробуй ещё раз.',
+  remindUnavail:'Напоминания доступны только внутри Telegram.'
  }
 };
 
@@ -2662,6 +2759,82 @@ function toast(msg){
   clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2600);
 }
 
+/* ============ subscription gate ============ */
+/* Проверяет подписку через API бота. Если не подписан — показывает
+   блокирующий оверлей. Гейт активен только когда задан API_BASE и
+   приложение открыто внутри Telegram; иначе тихо пропускает. */
+let _gateChannelUrl='';
+async function enforceGate(){
+  const data=await apiPost('/api/verify',{});
+  if(!data||!data.ok||!data.gated||data.subscribed){
+    document.getElementById('gateOverlay').classList.remove('on');
+    return;
+  }
+  _gateChannelUrl=data.channelUrl||'';
+  document.getElementById('gateOverlay').classList.add('on');
+}
+function gateSubscribe(){
+  if(!_gateChannelUrl) return;
+  hImpact('light');
+  if(TG&&TG.openTelegramLink&&/^https?:\/\/t\.me\//.test(_gateChannelUrl)){
+    TG.openTelegramLink(_gateChannelUrl);
+  }else if(TG&&TG.openLink){TG.openLink(_gateChannelUrl);}
+  else{window.open(_gateChannelUrl,'_blank');}
+}
+async function gateRecheck(){
+  const T=I18N[LANG],btn=document.getElementById('gateCheckBtn'),err=document.getElementById('gateErr');
+  err.style.display='none';btn.disabled=true;btn.textContent=T.gateChecking;
+  const data=await apiPost('/api/verify',{});
+  btn.disabled=false;btn.textContent=T.gateCheckBtn;
+  if(data&&data.ok&&(!data.gated||data.subscribed)){
+    document.getElementById('gateOverlay').classList.remove('on');hNotify('success');
+  }else{
+    err.textContent=T.gateStillNo;err.style.display='block';hNotify('error');
+  }
+}
+
+/* ============ daily reminder ============ */
+function openRemind(){
+  const T=I18N[LANG];
+  if(!API_BASE||!TG||!TG.initData){toast(T.remindUnavail);return;}
+  const saved=loadReminderPref();
+  document.getElementById('remindEnable').checked=!!saved.enabled;
+  document.getElementById('remindTime').value=saved.time||'09:00';
+  syncRemindRow();
+  document.getElementById('remindErr').style.display='none';
+  document.getElementById('remindOverlay').classList.add('on');
+  hImpact('light');
+}
+function closeRemind(){document.getElementById('remindOverlay').classList.remove('on');}
+function syncRemindRow(){
+  const on=document.getElementById('remindEnable').checked;
+  document.getElementById('remindTimeRow').style.opacity=on?'1':'.4';
+  document.getElementById('remindTime').disabled=!on;
+}
+function loadReminderPref(){
+  try{return JSON.parse(localStorage.getItem('lunaria_remind'))||{};}catch(e){return {};}
+}
+function saveReminderPref(p){
+  try{localStorage.setItem('lunaria_remind',JSON.stringify(p));}catch(e){}
+}
+async function saveRemind(){
+  const T=I18N[LANG],err=document.getElementById('remindErr');
+  const enabled=document.getElementById('remindEnable').checked;
+  const tm=document.getElementById('remindTime').value;
+  err.style.display='none';
+  const data=await apiPost('/api/reminder',{
+    enabled,time:tm,tzOffset:new Date().getTimezoneOffset()
+  });
+  if(data&&data.ok){
+    saveReminderPref({enabled,time:tm});
+    closeRemind();
+    toast(enabled?T.remindOnToast(tm):T.remindOffToast);
+    hNotify('success');
+  }else{
+    err.textContent=T.remindErr;err.style.display='block';hNotify('error');
+  }
+}
+
 /* ============ boot ============ */
 function render(){
   evaluateStreak();
@@ -2694,6 +2867,13 @@ function boot(){
     LANG=S.lang||'uk';
     if(!S.name && tgUser && tgUser.first_name) S.name=tgUser.first_name;
     render();
+    // hide the reminder bell when the API isn't configured / not in Telegram
+    if(!API_BASE||!TG||!TG.initData){
+      const rb=document.getElementById('remindBtn');if(rb) rb.style.display='none';
+    }
+    document.getElementById('remindEnable').addEventListener('change',syncRemindRow);
+    // mandatory channel subscription (no-op if gate disabled / not in Telegram)
+    enforceGate();
   });
 }
 boot();
